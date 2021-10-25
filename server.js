@@ -4,20 +4,25 @@ const bcrypt = require("bcryptjs")
 const cors = require("cors")
 const { v4: uuidv4 } = require("uuid")
 
+const DBSTRING =
+  "postgres://hjtqvwqx:i-lgggJgY-howhBMFWrhsLpMOel53sxn@surus.db.elephantsql.com/hjtqvwqx"
+const moreThanMetricsDB = new Pool({ connectionString: DBSTRING })
 const PORT = 8080
-const whitelist = ["http://localhost:3000"]
-const corsOptions = {
-  credentials: true, // This is important.
-  origin: (origin, callback) => {
-    if (whitelist.includes(origin)) return callback(null, true)
 
-    callback(new Error("Not allowed by CORS"))
-  },
-}
+// const whitelist = ["http://localhost:3000"]
+// const corsOptions = {
+//   credentials: true, // This is important.
+//   origin: (origin, callback) => {
+//     if (whitelist.includes(origin)) return callback(null, true)
+
+//     callback(new Error("Not allowed by CORS"))
+//   },
+// }
 
 const app = express()
 app.use(express.json())
-app.use(cors(corsOptions))
+// app.use(cors(corsOptions))
+app.use(cors())
 
 app.post("/company/login", async (req, res) => {
   const { company_email, company_password } = req.body
