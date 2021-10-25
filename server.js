@@ -1,4 +1,4 @@
-import { isValidEmail, isValidPassword } from "./server-validation"
+const { isValidEmail, isValidPassword } = require("./server-validation.js")
 const { Pool } = require("pg")
 const express = require("express")
 const bcrypt = require("bcryptjs")
@@ -33,14 +33,14 @@ app.post("/company/register", async (req, res) => {
   if (company_password !== company_password_confirmation) {
     return res.status(400).send("Confirmation password isn't the same as the password")
   }
-  if (isValidPassword(company_password)) {
+  if (!isValidPassword(company_password)) {
     return res.status(400).send("Password isn't valid, it doesn't contain the necessary values")
   }
   const salt = await bcrypt.genSalt()
   const hashedPassword = await bcrypt.hash(company_password, salt)
   const client = await moreThanMetricsDB.connect()
   const insertNewCompany =
-    "INSERT INTO companies (company_email, company_hashed_password) VALUES ('$1', '$2');"
+    "INSERT INTO companies (company_email, company_hashed_password) VALUES ($1, $2);"
   client
     .query(insertNewCompany, [company_email, hashedPassword])
     .then(() => {
@@ -49,7 +49,7 @@ app.post("/company/register", async (req, res) => {
     .catch(error => {
       res.status(500).send(error)
     })
-    .release()
+  client.release()
 })
 
 app.post("/candidate/register", async (req, res) => {
@@ -60,14 +60,14 @@ app.post("/candidate/register", async (req, res) => {
   if (candidate_password !== candidate_password_confirmation) {
     return res.status(400).send("Confirmation password isn't the same as the password")
   }
-  if (isValidPassword(candidate_password)) {
+  if (!isValidPassword(candidate_password)) {
     return res.status(400).send("Password isn't valid, it doesn't contain the necessary values")
   }
   const salt = await bcrypt.genSalt()
   const hashedPassword = await bcrypt.hash(candidate_password, salt)
   const client = await moreThanMetricsDB.connect()
   const insertNewCandidate =
-    "INSERT INTO candidates (candidate_email, candidate_hashed_password) VALUES ('$1', '$2');"
+    "INSERT INTO candidates (candidate_email, candidate_hashed_password) VALUES ($1, $2);"
   client
     .query(insertNewCandidate, [candidate_email, hashedPassword])
     .then(() => {
@@ -76,7 +76,7 @@ app.post("/candidate/register", async (req, res) => {
     .catch(error => {
       res.status(500).send(error)
     })
-    .release()
+  client.release()
 })
 
 app.post("/company/login", async (req, res) => {
