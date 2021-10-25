@@ -6,9 +6,9 @@ const { v4: uuidv4 } = require("uuid")
 
 const DBSTRING =
   "postgres://hjtqvwqx:i-lgggJgY-howhBMFWrhsLpMOel53sxn@surus.db.elephantsql.com/hjtqvwqx"
+
 const moreThanMetricsDB = new Pool({ connectionString: DBSTRING })
 const PORT = 8080
-
 // const whitelist = ["http://localhost:3000"]
 // const corsOptions = {
 //   credentials: true, // This is important.
@@ -23,6 +23,60 @@ const app = express()
 app.use(express.json())
 // app.use(cors(corsOptions))
 app.use(cors())
+
+app.post("/company/register", async (req, res) => {
+  const { company_email, company_password, company_password_confirmation } = req.body
+  if (!isValidEmail(company_email)) {
+    return res.status(400).send("Email isn't a valid email")
+  }
+  if (company_password !== company_password_confirmation) {
+    return res.status(400).send("Confirmation password isn't the same as the password")
+  }
+  if (isValidPassword(company_password)) {
+    return res.status(400).send("Password isn't valid, it doesn't contain the necessary values")
+  }
+  const salt = await bcrypt.genSalt()
+  const hashedPassword = await bcrypt.hash(company_password, salt)
+  const client = await moreThanMetricsDB.connect()
+  const insertNewCompany =
+    "INSERT INTO companies (company_email, company_hashed_password) VALUES ('$1', '$2');"
+  client
+    .query(insertNewCompany, [company_email, hashedPassword])
+    .then(() => {
+      res.status(200).send("Registered new company")
+    })
+    .catch(error => {
+      res.status(500).send(error)
+    })
+    .release()
+})
+
+app.post("/candidate/register", async (req, res) => {
+  const { candidate_email, candidate_password, candidate_password_confirmation } = req.body
+  if (!isValidEmail(candidate_email)) {
+    return res.status(400).send("Email isn't a valid email")
+  }
+  if (candidate_password !== candidate_password_confirmation) {
+    return res.status(400).send("Confirmation password isn't the same as the password")
+  }
+  if (isValidPassword(candidate_password)) {
+    return res.status(400).send("Password isn't valid, it doesn't contain the necessary values")
+  }
+  const salt = await bcrypt.genSalt()
+  const hashedPassword = await bcrypt.hash(candidate_password, salt)
+  const client = await moreThanMetricsDB.connect()
+  const insertNewCandidate =
+    "INSERT INTO candidates (candidate_email, candidate_hashed_password) VALUES ('$1', '$2');"
+  client
+    .query(insertNewCandidate, [candidate_email, hashedPassword])
+    .then(() => {
+      res.status(200).send("Registered new candidate")
+    })
+    .catch(error => {
+      res.status(500).send(error)
+    })
+    .release()
+})
 
 app.post("/company/login", async (req, res) => {
   const { company_email, company_password } = req.body
@@ -83,3 +137,23 @@ app.post("/candidate/login", async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server started!`)
 })
+
+function isValidEmail(email) {
+  const re =
+    /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+  return re.test(String(email).toLowerCase())
+}
+
+function isValidPassword(password) {
+  const digitRegex = /\d/
+  const lowerCaseRegex = /[a-z]/
+  const upperCaseRegex = /[A-Z]/
+  const symbolRegex = /[ `!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~]/
+  return (
+    password.length >= 8 &&
+    digitRegex.test(password) &&
+    lowerCaseRegex.test(password) &&
+    upperCaseRegex.test(password) &&
+    symbolRegex.test(password)
+  )
+}
