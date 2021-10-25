@@ -4,6 +4,7 @@ const bcrypt = require("bcryptjs")
 const cors = require("cors")
 const { v4: uuidv4 } = require("uuid")
 
+const PORT = 8080
 const whitelist = ["http://localhost:3000"]
 const corsOptions = {
   credentials: true, // This is important.
@@ -72,4 +73,8 @@ app.post("/candidate/login", async (req, res) => {
       res.status(500).send({ error })
     })
   client.release()
+})
+
+app.listen(PORT, () => {
+  console.log(`Server started!`)
 })
