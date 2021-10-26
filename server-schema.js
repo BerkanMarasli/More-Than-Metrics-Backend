@@ -76,6 +76,14 @@ async function createTables() {
     .then(() => console.log("Created candidates_technologies table successfully"))
     .catch(error => console.log(error))
 
+  // Jobs Table
+  const createJobsTable =
+    "CREATE TABLE jobs (job_id SERIAL PRIMARY KEY, job_title TEXT NOT NULL, job_description TEXT NOT NULL, account_id INTEGER NOT NULL, FOREIGN KEY (account_id) REFERENCES accounts(account_id));"
+  client
+    .query(createJobsTable)
+    .then(() => console.log("Created jobs table successfully"))
+    .catch(error => console.log(error))
+
   client.release()
 }
 
