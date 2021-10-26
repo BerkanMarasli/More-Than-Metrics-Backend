@@ -54,7 +54,8 @@ app.get("/years_in_industry", async (req, res) => {
 app.get("/jobs/:search", async (req, res) => {
   const client = await moreThanMetricsDB.connect();
   const search = req.params.search;
-  const getJobs = "SELECT * FROM jobs WHERE job_title LIKE '%$1%'";
+  const getJobs =
+    "SELECT * FROM jobs JOIN accounts ON accounts.account_id = jobs.account_id JOIN companies ON companies.account_id = jobs.account_id WHERE job_title LIKE '%$1%' OR companyName LIKE '%$1%";
   const queryResult = await client.query(getJobs, [search]);
   const jobs = queryResult.rows;
   if (jobs.length < 1) {
