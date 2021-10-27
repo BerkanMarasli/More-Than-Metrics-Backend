@@ -51,10 +51,35 @@ app.get("/years_in_industry", async (req, res) => {
   client.release();
 });
 
+app.get("/technologies", async (req, res) => {
+  const client = await moreThanMetricsDB.connect();
+  const getTechnologyCategory = "Select * FROM technologies";
+  const queryResult = await client.query(getTechnologyCategory);
+  const technologyCategories = queryResult.rows;
+  if (technologyCategories.length < 1) {
+    res.status(500).send("No categories for technologies!");
+  } else {
+    res.status(200).send(technologyCategories);
+  }
+  client.release();
+});
+
+app.get("/prompts", async (req, res) => {
+  const client = await moreThanMetricsDB.connect();
+  const getPromptCategory = "Select * FROM prompts";
+  const queryResult = await client.query(getPromptCategory);
+  const promptsCategories = queryResult.rows;
+  if (promptsCategories.length < 1) {
+    res.status(500).send("No categories for prompts!");
+  } else {
+    res.status(200).send(promptsCategories);
+  }
+  client.release();
+});
+
 app.get("/jobs/:search?", async (req, res) => {
   const client = await moreThanMetricsDB.connect();
   let search = req.params.search;
-  console.log(search);
   if (search === undefined) {
     search = "";
   }
@@ -68,6 +93,36 @@ app.get("/jobs/:search?", async (req, res) => {
     res.status(400).send("No results");
   } else {
     res.status(200).send(jobs);
+  }
+  client.release();
+});
+
+app.get("/applications/review/:jobID", async (req, res) => {
+  const client = await moreThanMetricsDB.connect();
+  const jobID = req.params.jobID;
+  const getApplications =
+    "SELECT application_status.application_id, prompt, answer FROM application_status JOIN application_responses ON application_responses.application_id = application_status.application_id JOIN prompts ON prompts.prompt_id = application_responses.prompt_id WHERE job_id = $1 AND reviewed = false";
+  const queryResult = await client.query(getApplications, [jobID]);
+  const applicants = queryResult.rows;
+  if (applicants.length < 1) {
+    res.status(400).send("No applicants");
+  } else {
+    res.status(200).send(applicants);
+  }
+  client.release();
+});
+
+app.get("/applications/accepted/:jobID", async (req, res) => {
+  const client = await moreThanMetricsDB.connect();
+  const jobID = req.params.jobID;
+  const getSuccessfulApplicants =
+    "SELECT application_id, candidate_name, candidate_phone_number FROM application_status JOIN candidates ON candidates.account_id = application_status.account_id WHERE job_id = $1 AND reviewed = true AND accepted = true";
+  const queryResult = await client.query(getSuccessfulApplicants, [jobID]);
+  const successfulApplicants = queryResult.rows;
+  if (successfulApplicants.length < 1) {
+    res.status(400).send("No successful applicants");
+  } else {
+    res.status(200).send(successfulApplicants);
   }
   client.release();
 });
