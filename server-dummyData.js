@@ -11,7 +11,7 @@ INSERT INTO prompts (prompt) VALUES ('What is your fav colour?'), ('How happy ar
 
 INSERT INTO jobs (job_title, job_description, account_id) VALUES ('Coding Coach', 'asdiasidjaisdjiasjd', 17), ('Coding Warrior', 'lclvhufo', 18), ('CEO', 'Rich', 17);
 
-INSERT INTO applications (question_1, answer_1, question_2, answer_2, question_3, answer_3, reviewed, accepted, account_id, job_id) VALUES ('A', 'A', 'B', 'B', 'C', 'C', true, false, 3, 1);
+INSERT INTO applications (question_1, answer_1, question_2, answer_2, question_3, answer_3, reviewed, accepted, account_id, job_id) VALUES (1, 'A', 2, 'B', 3, 'C', true, false, 3, 1);
 
 
 
