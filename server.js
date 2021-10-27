@@ -81,6 +81,35 @@ app.get("/prompts", async (req, res) => {
   client.release();
 });
 
+app.get("/company/:companyName", async (req, res) => {
+  const client = await moreThanMetricsDB.connect();
+  const companyName = req.params.companyID;
+  const getCompanyDetails = "SELECT * FROM companies WHERE company_name = $1";
+  const queryResult = client.query(getCompanyDetails, [companyName]);
+  const companyDetails = (await queryResult).rows;
+  if (companyDetails.length < 1) {
+    res.status(500).send("No company!");
+  } else {
+    res.status(200).send(companyDetails);
+  }
+  client.release();
+});
+
+app.get("/jobs/company/:companyName", async (req, res) => {
+  const client = await moreThanMetricsDB.connect();
+  const companyName = req.params.companyName;
+  const getCompanyJobs =
+    "SELECT * FROM jobs JOIN companies ON companies.account_id = jobs.account_id WHERE company_name = $1";
+  const queryResult = client.query(getCompanyJobs, [companyName]);
+  const companyJobs = (await queryResult).rows;
+  if (companyJobs.length < 1) {
+    res.status(500).send("No company jobs!");
+  } else {
+    res.status(200).send(companyJobs);
+  }
+  client.release();
+});
+
 app.get("/jobs/:search?", async (req, res) => {
   const client = await moreThanMetricsDB.connect();
   let search = req.params.search;
