@@ -136,3 +136,10 @@ function isValidAccountDetails(email, password, confirmation) {
   }
   return true;
 }
+
+exports.isInputEmpty = function isInputEmpty(input) {
+  if (input.length < 1) {
+    return true;
+  }
+  return false;
+};
