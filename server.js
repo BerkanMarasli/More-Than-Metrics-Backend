@@ -86,7 +86,8 @@ app.get("/jobs/:search?", async (req, res) => {
   let search = req.params.search;
   if (search === undefined) {
     search = "";
-    const getAllJobs = "SELECT * FROM jobs";
+    const getAllJobs =
+      "SELECT job_id, job_title, company_name FROM jobs JOIN companies ON companies.account_id = jobs.account_id ORDER BY job_id";
     const queryResult = await client.query(getAllJobs);
     const jobs = queryResult.rows;
     if (jobs.length < 1) {
@@ -97,7 +98,7 @@ app.get("/jobs/:search?", async (req, res) => {
     client.release();
   } else {
     const getJobs =
-      "SELECT * FROM jobs JOIN companies ON companies.account_id = jobs.account_id WHERE LOWER(job_title) LIKE $1 OR LOWER(company_name) LIKE $1";
+      "SELECT job_id, job_title, company_name FROM jobs JOIN companies ON companies.account_id = jobs.account_id WHERE LOWER(job_title) LIKE $1 OR LOWER(company_name) LIKE $1 ORDER BY job_id";
     const queryResult = await client.query(getJobs, [
       "%" + search.toLowerCase() + "%",
     ]);
@@ -109,6 +110,37 @@ app.get("/jobs/:search?", async (req, res) => {
     }
     client.release();
   }
+});
+
+app.get("/job/:jobID", async (req, res) => {
+  const client = await moreThanMetricsDB.connect();
+  let jobID = req.params.jobID;
+  const getJobDetails =
+    "SELECT job_title, job_description, jobs.location, salary, company_name, company_bio FROM jobs JOIN companies ON companies.account_id = jobs.account_id WHERE jobs.job_id = $1";
+  const queryResult = await client.query(getJobDetails, [jobID]);
+  const jobDetails = queryResult.rows;
+  if (jobDetails.length < 1) {
+    res.status(400).send("no such job");
+  } else {
+    const getResponsibilities =
+      "SELECT responsibility FROM job_responsibilities WHERE job_id = $1";
+    const queryResp = await client.query(getResponsibilities, [jobID]);
+    const respArray = [];
+    queryResp.rows.forEach((input) => {
+      respArray.push(input.responsibility);
+    });
+    jobDetails[0]["responsibilities"] = respArray;
+    const getTechnologies =
+      "SELECT technology_name FROM job_technologies JOIN technologies ON technologies.technology_id = job_technologies.technology_id WHERE job_id = $1";
+    const queryTech = await client.query(getTechnologies, [jobID]);
+    techArray = [];
+    queryTech.rows.forEach((input) => {
+      techArray.push(input.technology_name);
+    });
+    jobDetails[0]["technologies"] = techArray;
+    res.status(200).send(jobDetails);
+  }
+  client.release();
 });
 
 app.post("/jobs", async (req, res) => {
@@ -126,50 +158,41 @@ app.post("/jobs", async (req, res) => {
   if (validJobDetails !== true) {
     return res.status(400).send(validJobDetails);
   }
-  let jobID;
+  const client = await moreThanMetricsDB.connect();
   const insertNewJob =
-    "INSERT INTO jobs(job_title, job_description, location, salary, account_id) VALUES ($1, $2, $3, $4, $5)";
-  await client
-    .query(
-      insertNewJob,
-      [jobTitle, jobDesc, location, salary, accountID],
-      function (err, result) {
-        jobID = result.job_id;
-        console.log(jobID);
-      }
-    )
-    .then(() => {
-      res.status(200).send("Added new job!");
-    })
+    "INSERT INTO jobs(job_title, job_description, location, salary, account_id) VALUES ($1, $2, $3, $4, $5) RETURNING job_id";
+  const queryResult = await client
+    .query(insertNewJob, [jobTitle, jobDesc, location, salary, accountID])
     .catch((error) => {
-      res.status(500).send(error);
+      client.release();
+      return res.status(500).send(error);
     });
+
+  let jobID = queryResult.rows[0].job_id;
   keyResponsibilities.forEach((input) => {
     client
       .query(
         "INSERT INTO job_responsibilities(job_id, responsibility) VALUES ($1, $2)",
         [jobID, input]
       )
-      .then(() => {
-        res.status(200).send("Added job technology!");
-      })
       .catch((error) => {
-        res.status(500).send(error);
+        client.release();
+        return res.status(500).send(error);
       });
   });
+
   keyTechnologies.forEach((input) => {
     client
       .query(
         "INSERT INTO job_technologies(job_id, technology_id) VALUES ($1, $2)",
         [jobID, input]
       )
-      .then(() => {
-        res.status(200).send("Added job technology!");
-      })
       .catch((error) => {
-        res.status(500).send(error);
+        client.release();
+        return res.status(500).send(error);
       });
   });
+  res.status(200).send("Added all job details");
   client.release();
 });
 
