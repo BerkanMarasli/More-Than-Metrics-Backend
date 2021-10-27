@@ -73,9 +73,6 @@ app.get("/jobs/:search?", async (req, res) => {
   client.release();
 });
 
-// INSERT INTO application_status (reviewed,accepted, account_id,job_id) VALUES (false, false, 2,1) , (false, true, 3, 1), (true, false, 5, 1);
-// INSERT INTO application_responses(application_id, prompt_id, answer) VALUES (4, 1, 'POGGERS'), (4, 2, 'IM A TROLL'), (4, 3, 'LOOOOZER'),(5, 1, 'Lorem'), (5, 2, 'Ipsum'), (5, 3, 'Im'),(6, 1, 'Fire'), (6, 2, 'Water'), (6, 3, 'Air');
-
 app.get("/applications/review/:jobID", async (req, res) => {
   const client = await moreThanMetricsDB.connect();
   const jobID = req.params.jobID;
@@ -87,6 +84,21 @@ app.get("/applications/review/:jobID", async (req, res) => {
     res.status(400).send("No applicants");
   } else {
     res.status(200).send(applicants);
+  }
+  client.release();
+});
+
+app.get("/applications/accepted/:jobID", async (req, res) => {
+  const client = await moreThanMetricsDB.connect();
+  const jobID = req.params.jobID;
+  const getSuccessfulApplicants =
+    "SELECT application_id, candidate_name, candidate_phone_number FROM application_status JOIN candidates ON candidates.account_id = application_status.account_id WHERE job_id = $1 AND reviewed = true AND accepted = true";
+  const queryResult = await client.query(getSuccessfulApplicants, [jobID]);
+  const successfulApplicants = queryResult.rows;
+  if (successfulApplicants.length < 1) {
+    res.status(400).send("No successful applicants");
+  } else {
+    res.status(200).send(successfulApplicants);
   }
   client.release();
 });
