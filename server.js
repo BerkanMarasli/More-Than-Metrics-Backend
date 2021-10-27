@@ -3,7 +3,6 @@ const { Pool } = require("pg");
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const cors = require("cors");
-const { promisify } = require("util");
 // const { v4: uuidv4 } = require("uuid");
 
 const DBSTRING =
