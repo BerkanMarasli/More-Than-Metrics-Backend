@@ -44,6 +44,14 @@ async function createTables() {
     .then(() => console.log("Created technologies table successfully"))
     .catch(error => console.log(error))
 
+  // Prompts Table
+  const createPromptTable =
+    "CREATE TABLE prompts (prompt_id SERIAL PRIMARY KEY, prompt TEXT NOT NULL);"
+  client
+    .query(createPromptTable)
+    .then(() => console.log("Created prompt table successfully"))
+    .catch(error => console.log(error))
+
   // Accounts Table
   const createAccountsTable =
     "CREATE TABLE accounts (account_id SERIAL PRIMARY KEY, account_email TEXT NOT NULL, account_hashed_password TEXT NOT NULL, account_type_id INTEGER NOT NULL, FOREIGN KEY (account_type_id) REFERENCES account_type(account_type_id));"
@@ -82,6 +90,14 @@ async function createTables() {
   client
     .query(createJobsTable)
     .then(() => console.log("Created jobs table successfully"))
+    .catch(error => console.log(error))
+
+  // Applications Table
+  const createApplicationsTable =
+    "CREATE TABLE applications (application_id SERIAL PRIMARY KEY, question_1 INTEGER NOT NULL, answer_1 TEXT NOT NULL, question_2 INTEGER NOT NULL, answer_2 TEXT NOT NULL, question_3 INTEGER NOT NULL, answer_3 TEXT NOT NULL, reviewed BOOL NOT NULL, accepted BOOL NOT NULL, account_id INTEGER NOT NULL, job_id INTEGER NOT NULL, FOREIGN KEY (account_id) REFERENCES accounts(account_id), FOREIGN KEY (job_id) REFERENCES jobs(job_id), FOREIGN KEY (question_1) REFERENCES prompts(prompt_id), FOREIGN KEY (question_2) REFERENCES prompts(prompt_id), FOREIGN KEY (question_3) REFERENCES prompts(prompt_id));"
+  client
+    .query(createApplicationsTable)
+    .then(() => console.log("Created applications table successfully"))
     .catch(error => console.log(error))
 
   client.release()
