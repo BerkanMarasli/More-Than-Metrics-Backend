@@ -110,13 +110,21 @@ async function createTables() {
     .then(() => console.log("Created jobs technologies table successfully"))
     .catch((error) => console.log(error));
 
-  // Applications Table
-  const createApplicationsTable =
-    "CREATE TABLE applications (application_id SERIAL PRIMARY KEY, question_1 INTEGER NOT NULL, answer_1 TEXT NOT NULL, question_2 INTEGER NOT NULL, answer_2 TEXT NOT NULL, question_3 INTEGER NOT NULL, answer_3 TEXT NOT NULL, reviewed BOOL NOT NULL, accepted BOOL NOT NULL, account_id INTEGER NOT NULL, job_id INTEGER NOT NULL, FOREIGN KEY (account_id) REFERENCES accounts(account_id), FOREIGN KEY (job_id) REFERENCES jobs(job_id), FOREIGN KEY (question_1) REFERENCES prompts(prompt_id), FOREIGN KEY (question_2) REFERENCES prompts(prompt_id), FOREIGN KEY (question_3) REFERENCES prompts(prompt_id));";
+  // Application Status Table
+  const createApplicationStatusTable =
+    "CREATE TABLE application_status (application_id SERIAL PRIMARY KEY, reviewed BOOL NOT NULL, accepted BOOL NOT NULL, account_id INTEGER NOT NULL, job_id INTEGER NOT NULL, FOREIGN KEY (account_id) REFERENCES accounts(account_id), FOREIGN KEY (job_id) REFERENCES jobs(job_id));"
   client
-    .query(createApplicationsTable)
-    .then(() => console.log("Created applications table successfully"))
-    .catch((error) => console.log(error));
+    .query(createApplicationStatusTable)
+    .then(() => console.log("Created application_status table successfully"))
+    .catch(error => console.log(error))
+
+  // Application Responses Table
+  const createApplicationResponsesTable =
+    "CREATE TABLE application_responses (application_id INTEGER NOT NULL, prompt_id INTEGER NOT NULL, answer TEXT NOT NULL, FOREIGN KEY (application_id) REFERENCES application_status(application_id), FOREIGN KEY (prompt_id) REFERENCES prompts(prompt_id));"
+  client
+    .query(createApplicationResponsesTable)
+    .then(() => console.log("Created application_status table successfully"))
+    .catch(error => console.log(error))
 
   client.release();
 }
