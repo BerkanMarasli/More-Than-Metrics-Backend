@@ -3,6 +3,7 @@ const { Pool } = require("pg");
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const cors = require("cors");
+const { promisify } = require("util");
 // const { v4: uuidv4 } = require("uuid");
 
 const DBSTRING =
@@ -50,11 +51,11 @@ app.get("/years_in_industry", async (req, res) => {
   }
   client.release();
 });
+//tech, promps
 
 app.get("/jobs/:search?", async (req, res) => {
   const client = await moreThanMetricsDB.connect();
   let search = req.params.search;
-  console.log(search);
   if (search === undefined) {
     search = "";
   }
@@ -68,6 +69,24 @@ app.get("/jobs/:search?", async (req, res) => {
     res.status(400).send("No results");
   } else {
     res.status(200).send(jobs);
+  }
+  client.release();
+});
+
+// INSERT INTO application_status (reviewed,accepted, account_id,job_id) VALUES (false, false, 2,1) , (false, true, 3, 1), (true, false, 5, 1);
+// INSERT INTO application_responses(application_id, prompt_id, answer) VALUES (4, 1, 'POGGERS'), (4, 2, 'IM A TROLL'), (4, 3, 'LOOOOZER'),(5, 1, 'Lorem'), (5, 2, 'Ipsum'), (5, 3, 'Im'),(6, 1, 'Fire'), (6, 2, 'Water'), (6, 3, 'Air');
+
+app.get("/applications/review/:jobID", async (req, res) => {
+  const client = await moreThanMetricsDB.connect();
+  const jobID = req.params.jobID;
+  const getApplications =
+    "SELECT application_status.application_id, prompt, answer FROM application_status JOIN application_responses ON application_responses.application_id = application_status.application_id JOIN prompts ON prompts.prompt_id = application_responses.prompt_id WHERE job_id = $1 AND reviewed = false";
+  const queryResult = await client.query(getApplications, [jobID]);
+  const applicants = queryResult.rows;
+  if (applicants.length < 1) {
+    res.status(400).send("No applicants");
+  } else {
+    res.status(200).send(applicants);
   }
   client.release();
 });
