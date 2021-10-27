@@ -184,11 +184,11 @@ app.post("/jobs", async (req, res) => {
     })
 
   let jobID = queryResult.rows[0].job_id
-  keyResponsibilities.forEach(input => {
+  keyResponsibilities.forEach(responsibility => {
     client
       .query("INSERT INTO job_responsibilities(job_id, responsibility) VALUES ($1, $2)", [
         jobID,
-        input,
+        responsibility,
       ])
       .catch(error => {
         client.release()
@@ -196,9 +196,12 @@ app.post("/jobs", async (req, res) => {
       })
   })
 
-  keyTechnologies.forEach(input => {
+  keyTechnologies.forEach(technologyID => {
     client
-      .query("INSERT INTO job_technologies(job_id, technology_id) VALUES ($1, $2)", [jobID, input])
+      .query("INSERT INTO job_technologies(job_id, technology_id) VALUES ($1, $2)", [
+        jobID,
+        technologyID,
+      ])
       .catch(error => {
         client.release()
         return res.status(500).send(error)
@@ -293,6 +296,7 @@ app.post("/company/register", async (req, res) => {
     companyPassword,
     companyName,
     companyBio,
+    companyLocation,
     numberOfEmployeesID,
     femalePercentage,
     retentionRate,
@@ -319,11 +323,12 @@ app.post("/company/register", async (req, res) => {
   )
   const accountID = accountIDQuery.rows[0].account_id
   const insertCompanyDetails =
-    "INSERT INTO companies (company_name, company_bio, company_number_of_employees_id, company_female_employee_percentage, company_retention_rate, account_id) VALUES ($1, $2, $3, $4, $5, $6);"
+    "INSERT INTO companies (company_name, company_bio, location, company_number_of_employees_id, company_female_employee_percentage, company_retention_rate, account_id) VALUES ($1, $2, $3, $4, $5, $6, $7);"
   await client
     .query(insertCompanyDetails, [
       companyName,
       companyBio,
+      companyLocation,
       numberOfEmployeesID,
       femalePercentage,
       retentionRate,

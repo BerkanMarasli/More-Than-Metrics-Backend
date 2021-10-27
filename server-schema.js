@@ -80,7 +80,7 @@ async function createTables() {
     .then(() => console.log("Created companies table successfully"))
     .catch(error => console.log(error))
 
-  // Candidates Technologies Table
+  // CandidatesTechnologies Table
   const createCandidatesTechnologiesTable =
     "CREATE TABLE candidates_technologies (account_id INTEGER NOT NULL, technology_id INTEGER NOT NULL, FOREIGN KEY (account_id) REFERENCES accounts(account_id), FOREIGN KEY (technology_id) REFERENCES technologies(technology_id));"
   client
@@ -96,7 +96,7 @@ async function createTables() {
     .then(() => console.log("Created jobs table successfully"))
     .catch(error => console.log(error))
 
-  //Job responsibilities table
+  //JobResponsibilities table
   const createJobsResponsibilitiesTable =
     "CREATE TABLE job_responsibilities (job_id INTEGER NOT NULL, responsibility TEXT NOT NULL, FOREIGN KEY (job_id) REFERENCES jobs(job_id))"
   client
@@ -104,7 +104,7 @@ async function createTables() {
     .then(() => console.log("Created jobs responsibilities table successfully"))
     .catch(error => console.log(error))
 
-  //Job technologies table
+  //JobTechnologies table
   const createJobsTechnologiesTable =
     "CREATE TABLE job_technologies (job_id INTEGER NOT NULL, technology_id INTEGER NOT NULL, FOREIGN KEY (job_id) REFERENCES jobs(job_id), FOREIGN KEY (technology_id) REFERENCES technologies(technology_id))"
   client
@@ -112,7 +112,7 @@ async function createTables() {
     .then(() => console.log("Created jobs technologies table successfully"))
     .catch(error => console.log(error))
 
-  // Application Status Table
+  // ApplicationStatus Table
   const createApplicationStatusTable =
     "CREATE TABLE application_status (application_id SERIAL PRIMARY KEY, reviewed BOOL NOT NULL, accepted BOOL NOT NULL, account_id INTEGER NOT NULL, job_id INTEGER NOT NULL, FOREIGN KEY (account_id) REFERENCES accounts(account_id), FOREIGN KEY (job_id) REFERENCES jobs(job_id));"
   client
@@ -120,7 +120,7 @@ async function createTables() {
     .then(() => console.log("Created application_status table successfully"))
     .catch(error => console.log(error))
 
-  // Application Responses Table
+  // ApplicationResponses Table
   const createApplicationResponsesTable =
     "CREATE TABLE application_responses (application_id INTEGER NOT NULL, prompt_id INTEGER NOT NULL, answer TEXT NOT NULL, FOREIGN KEY (application_id) REFERENCES application_status(application_id), FOREIGN KEY (prompt_id) REFERENCES prompts(prompt_id));"
   client
