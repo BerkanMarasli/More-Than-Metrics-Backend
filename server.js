@@ -51,7 +51,32 @@ app.get("/years_in_industry", async (req, res) => {
   }
   client.release();
 });
-//tech, promps
+
+app.get("/technologies", async (req, res) => {
+  const client = await moreThanMetricsDB.connect();
+  const getTechnologyCategory = "Select * FROM technologies";
+  const queryResult = await client.query(getTechnologyCategory);
+  const technologyCategories = queryResult.rows;
+  if (technologyCategories.length < 1) {
+    res.status(500).send("No categories for technologies!");
+  } else {
+    res.status(200).send(technologyCategories);
+  }
+  client.release();
+});
+
+app.get("/prompts", async (req, res) => {
+  const client = await moreThanMetricsDB.connect();
+  const getPromptCategory = "Select * FROM prompts";
+  const queryResult = await client.query(getPromptCategory);
+  const promptsCategories = queryResult.rows;
+  if (promptsCategories.length < 1) {
+    res.status(500).send("No categories for prompts!");
+  } else {
+    res.status(200).send(promptsCategories);
+  }
+  client.release();
+});
 
 app.get("/jobs/:search?", async (req, res) => {
   const client = await moreThanMetricsDB.connect();
