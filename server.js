@@ -1,4 +1,8 @@
-const { isValidCompany, isValidCandidate } = require("./server-validation.js");
+const {
+  isValidCompany,
+  isValidCandidate,
+  isValidJobDetails,
+} = require("./server-validation.js");
 const { Pool } = require("pg");
 const express = require("express");
 const bcrypt = require("bcryptjs");
@@ -82,18 +86,90 @@ app.get("/jobs/:search?", async (req, res) => {
   let search = req.params.search;
   if (search === undefined) {
     search = "";
-  }
-  const getJobs =
-    "SELECT * FROM jobs JOIN companies ON companies.account_id = jobs.account_id WHERE LOWER(job_title) LIKE $1 OR LOWER(company_name) LIKE $1";
-  const queryResult = await client.query(getJobs, [
-    "%" + search.toLowerCase() + "%",
-  ]);
-  const jobs = queryResult.rows;
-  if (jobs.length < 1) {
-    res.status(400).send("No results");
+    const getAllJobs = "SELECT * FROM jobs";
+    const queryResult = await client.query(getAllJobs);
+    const jobs = queryResult.rows;
+    if (jobs.length < 1) {
+      res.status(400).send("No results");
+    } else {
+      res.status(200).send(jobs);
+    }
+    client.release();
   } else {
-    res.status(200).send(jobs);
+    const getJobs =
+      "SELECT * FROM jobs JOIN companies ON companies.account_id = jobs.account_id WHERE LOWER(job_title) LIKE $1 OR LOWER(company_name) LIKE $1";
+    const queryResult = await client.query(getJobs, [
+      "%" + search.toLowerCase() + "%",
+    ]);
+    const jobs = queryResult.rows;
+    if (jobs.length < 1) {
+      res.status(400).send("No results");
+    } else {
+      res.status(200).send(jobs);
+    }
+    client.release();
   }
+});
+
+app.post("/jobs", async (req, res) => {
+  const jobDetails = req.body;
+  const {
+    jobTitle,
+    jobDesc,
+    location,
+    salary,
+    keyResponsibilities,
+    keyTechnologies,
+    accountID,
+  } = jobDetails;
+  const validJobDetails = isValidJobDetails(jobDetails);
+  if (validJobDetails !== true) {
+    return res.status(400).send(validJobDetails);
+  }
+  let jobID;
+  const insertNewJob =
+    "INSERT INTO jobs(job_title, job_description, location, salary, account_id) VALUES ($1, $2, $3, $4, $5)";
+  await client
+    .query(
+      insertNewJob,
+      [jobTitle, jobDesc, location, salary, accountID],
+      function (err, result) {
+        jobID = result.job_id;
+        console.log(jobID);
+      }
+    )
+    .then(() => {
+      res.status(200).send("Added new job!");
+    })
+    .catch((error) => {
+      res.status(500).send(error);
+    });
+  keyResponsibilities.forEach((input) => {
+    client
+      .query(
+        "INSERT INTO job_responsibilities(job_id, responsibility) VALUES ($1, $2)",
+        [jobID, input]
+      )
+      .then(() => {
+        res.status(200).send("Added job technology!");
+      })
+      .catch((error) => {
+        res.status(500).send(error);
+      });
+  });
+  keyTechnologies.forEach((input) => {
+    client
+      .query(
+        "INSERT INTO job_technologies(job_id, technology_id) VALUES ($1, $2)",
+        [jobID, input]
+      )
+      .then(() => {
+        res.status(200).send("Added job technology!");
+      })
+      .catch((error) => {
+        res.status(500).send(error);
+      });
+  });
   client.release();
 });
 
