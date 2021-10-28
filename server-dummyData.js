@@ -27,7 +27,7 @@ async function insertDummyData() {
 
   // Years in Industry Table
   insertQuery =
-    "INSERT INTO years_in_industry (category) VALUES ('0'), ('1-2'), ('3-4'), ('5+');";
+    "INSERT INTO years_in_industry (category) VALUES ('<1'), ('1'), ('2'), ('3'), ('4'), ('5+');";
   client
     .query(insertQuery)
     .then(() =>
@@ -37,7 +37,7 @@ async function insertDummyData() {
 
   // Number of Employees Table
   insertQuery =
-    "INSERT INTO number_of_employees (category) VALUES ('0-9'), ('10-25'), ('26-50'), ('51-99'), ('100-199'), ('200+');";
+    "INSERT INTO number_of_employees (category) VALUES ('<20'), ('20-99'), ('100-299'), ('300-499'), ('500-999'), ('1000+');";
   client
     .query(insertQuery)
     .then(() =>
