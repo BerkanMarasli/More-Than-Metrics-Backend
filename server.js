@@ -227,6 +227,23 @@ app.post("/jobs", async (req, res) => {
   client.release();
 });
 
+app.get("/applications/candidate/:candidateID", async (req, res) => {
+  const client = await moreThanMetricsDB.connect();
+  const candidateID = req.params.candidateID;
+  const getCandidateApplications =
+    "SELECT application_id, jobs.job_id, job_title, company_name, reviewed, accepted FROM application_status JOIN jobs ON jobs.job_id = application_status.job_id JOIN companies ON companies.company_id = jobs.company_id WHERE candidate_id = $1";
+  const queryResult = await client.query(getCandidateApplications, [
+    candidateID,
+  ]);
+  const candidateApplications = queryResult.rows;
+  if (candidateApplications.length < 1) {
+    res.status(200).send("No applications made");
+  } else {
+    res.status(200).send(candidateApplications);
+  }
+  client.release();
+});
+
 app.get("/applications/review/:jobID", async (req, res) => {
   const client = await moreThanMetricsDB.connect();
   const jobID = req.params.jobID;
@@ -263,7 +280,7 @@ app.get("/applications/review/:jobID", async (req, res) => {
   client.release();
 });
 
-app.patch("/applications", async (req, res) => {
+app.patch("/applications/assess", async (req, res) => {
   const { accepted, applicationID } = req.body;
   if (typeof accepted !== "boolean") {
     return res.status(400).send("Passing wrong type of value");
@@ -345,6 +362,60 @@ app.post("/application", async (req, res) => {
 });
 
 app.post("/candidate/register", async (req, res) => {
+  const candidateDetails = req.body;
+  const {
+    candidateEmail,
+    candidatePassword,
+    candidateName,
+    headline,
+    candidatePhoneNumber,
+    yearsInIndustryID,
+  } = candidateDetails;
+  // Checks for duplicate email
+  if (await isEmailTaken(candidateEmail)) {
+    return res.status(400).send("Email address already taken!");
+  }
+  // Validating candidate details
+  const validCandidateResponse = isValidCandidate(candidateDetails);
+  if (validCandidateResponse !== true) {
+    return res.status(400).send(validCandidateResponse);
+  }
+  // Creating new account for candidate
+  const newAccountResponse = await insertNewAccount(
+    candidateEmail,
+    candidatePassword,
+    1
+  );
+  if (newAccountResponse !== "Registered new account!") {
+    return res.status(500).send(newAccountResponse);
+  }
+  // Inserting (additional) details for candidate
+  const client = await moreThanMetricsDB.connect();
+  const accountIDQuery = await client.query(
+    "SELECT account_id FROM accounts WHERE account_email = $1",
+    [candidateEmail]
+  );
+  const accountID = accountIDQuery.rows[0].account_id;
+  const insertCandidateDetails =
+    "INSERT INTO candidates (candidate_name, headline, candidate_phone_number, candidate_years_in_industry_id, account_id) VALUES ($1, $2, $3, $4, $5)";
+  await client
+    .query(insertCandidateDetails, [
+      candidateName,
+      headline,
+      candidatePhoneNumber,
+      yearsInIndustryID,
+      accountID,
+    ])
+    .then(() => {
+      res.status(200).send("Added new candidate details!");
+    })
+    .catch((error) => {
+      res.status(500).send(error);
+    });
+  client.release();
+});
+
+app.patch("/candidate/update", async (req, res) => {
   const candidateDetails = req.body;
   const {
     candidateEmail,
