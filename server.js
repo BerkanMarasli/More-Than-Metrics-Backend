@@ -79,8 +79,9 @@ app.get("/prompts", async (req, res) => {
 
 app.get("/company/:companyName", async (req, res) => {
   const client = await moreThanMetricsDB.connect()
-  const companyName = req.params.companyID
-  const getCompanyDetails = "SELECT * FROM companies WHERE company_name = $1"
+  const companyName = req.params.companyName
+  const getCompanyDetails =
+    "SELECT * FROM companies JOIN number_of_employees ON number_of_employees.number_of_employees_id = companies.company_number_of_employees_id WHERE company_name = $1"
   const queryResult = client.query(getCompanyDetails, [companyName])
   const companyDetails = (await queryResult).rows
   if (companyDetails.length < 1) {
@@ -139,7 +140,7 @@ app.get("/job/:jobID", async (req, res) => {
   const client = await moreThanMetricsDB.connect()
   let jobID = req.params.jobID
   const getJobDetails =
-    "SELECT job_title, job_description, jobs.location, salary, company_name, company_bio FROM jobs JOIN companies ON companies.account_id = jobs.account_id WHERE jobs.job_id = $1"
+    "SELECT * , jobs.location FROM jobs JOIN companies ON companies.account_id = jobs.account_id WHERE jobs.job_id = $1"
   const queryResult = await client.query(getJobDetails, [jobID])
   const jobDetails = queryResult.rows
   if (jobDetails.length < 1) {
