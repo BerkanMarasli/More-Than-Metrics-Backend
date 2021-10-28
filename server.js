@@ -86,7 +86,7 @@ app.get("/company/:companyName", async (req, res) => {
   const client = await moreThanMetricsDB.connect();
   const companyName = req.params.companyName;
   const getCompanyDetails =
-    "SELECT * FROM companies JOIN number_of_employees ON number_of_employees.number_of_employees_id = companies.number_of_employees_id WHERE company_name = $1";
+    "SELECT * FROM companies JOIN number_of_employees ON number_of_employees.number_of_employees_id = companies.company_number_of_employees_id WHERE company_name = $1";
   const queryResult = client.query(getCompanyDetails, [companyName]);
   const companyDetails = (await queryResult).rows;
   if (companyDetails.length < 1) {
@@ -231,12 +231,33 @@ app.get("/applications/review/:jobID", async (req, res) => {
   const client = await moreThanMetricsDB.connect();
   const jobID = req.params.jobID;
   const getApplications =
-    "SELECT application_status.application_id, prompt, answer FROM application_status JOIN application_responses ON application_responses.application_id = application_status.application_id JOIN prompts ON prompts.prompt_id = application_responses.prompt_id WHERE job_id = $1 AND reviewed = false";
+    "SELECT application_id, candidate_id FROM application_status WHERE job_id = $1 AND reviewed = false";
   const queryResult = await client.query(getApplications, [jobID]);
   const applicants = queryResult.rows;
   if (applicants.length < 1) {
     res.status(400).send("No applicants");
   } else {
+    for (let i = 0; i < applicants.length; i++) {
+      console.log(applicants[i]);
+      const getResponses =
+        "SELECT prompt, answer FROM application_responses JOIN prompts ON prompts.prompt_id = application_responses.prompt_id WHERE application_id = $1";
+      const responsesQuery = await client.query(getResponses, [
+        applicants[i].application_id,
+      ]);
+      const responses = responsesQuery.rows;
+      for (let j = 0; j < responses.length; j++) {
+        console.log(responses[j]);
+        const promptKey = "Prompt" + (j + 1);
+        const answerKey = "Answer" + (j + 1);
+        console.log(promptKey);
+        console.log(answerKey);
+        applicants[i] = {
+          ...applicants[i],
+          [promptKey]: responses[j].prompt,
+          [answerKey]: responses[j].answer,
+        };
+      }
+    }
     res.status(200).send(applicants);
   }
   client.release();
