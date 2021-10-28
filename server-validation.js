@@ -130,7 +130,7 @@ exports.isValidCompany = function isValidCompany(companyDetails) {
 
 exports.isValidApplication = function isValidApplication(applicationDetails) {
   const {
-    accountID,
+    candidateID,
     jobID,
     prompt1,
     answer1,
@@ -139,7 +139,7 @@ exports.isValidApplication = function isValidApplication(applicationDetails) {
     prompt3,
     answer3,
   } = applicationDetails;
-  if (accountID === undefined || accountID === null) {
+  if (candidateID === undefined || candidateID === null) {
     return "Candidate account not specified";
   }
   if (jobID === undefined || jobID === null) {
@@ -157,10 +157,10 @@ exports.isValidApplication = function isValidApplication(applicationDetails) {
   if (answer1.length < 1) {
     return "No answer for question 1";
   }
-  if (answer1.length < 1) {
+  if (answer2.length < 1) {
     return "No answer for question 2";
   }
-  if (answer1.length < 1) {
+  if (answer3.length < 1) {
     return "No answer for question 3";
   }
   return true;
@@ -178,10 +178,3 @@ function isValidAccountDetails(email, password, confirmation) {
   }
   return true;
 }
-
-exports.isInputEmpty = function isInputEmpty(input) {
-  if (input.length < 1) {
-    return true;
-  }
-  return false;
-};
