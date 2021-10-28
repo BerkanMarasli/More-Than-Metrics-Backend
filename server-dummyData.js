@@ -105,6 +105,7 @@ async function insertDummyData() {
         "candidatePassword":"Testing123!",
         "candidatePasswordConfirmation":"Testing123!",
         "candidateName":"Sang ta",
+        "headline":"Exotic",
         "candidatePhoneNumber":447812389483,
         "yearsInIndustryID":2
     }
@@ -117,6 +118,7 @@ async function insertDummyData() {
         "candidatePassword":"Testing123!",
         "candidatePasswordConfirmation":"Testing123!",
         "candidateName":"Berkan Marasli",
+        "headline":"They call me Mr. Amazon",
         "candidatePhoneNumber":447817389483,
         "yearsInIndustryID":4
     }

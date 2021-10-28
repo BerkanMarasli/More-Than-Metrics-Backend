@@ -231,7 +231,7 @@ app.get("/applications/review/:jobID", async (req, res) => {
   const client = await moreThanMetricsDB.connect();
   const jobID = req.params.jobID;
   const getApplications =
-    "SELECT application_id, candidate_id FROM application_status WHERE job_id = $1 AND reviewed = false";
+    "SELECT application_id, application_status.candidate_id, headline FROM application_status  JOIN candidates ON candidates.candidate_id = application_status.candidate_id WHERE job_id = $1 AND reviewed = false";
   const queryResult = await client.query(getApplications, [jobID]);
   const applicants = queryResult.rows;
   if (applicants.length < 1) {
@@ -247,8 +247,8 @@ app.get("/applications/review/:jobID", async (req, res) => {
       const responses = responsesQuery.rows;
       for (let j = 0; j < responses.length; j++) {
         console.log(responses[j]);
-        const promptKey = "Prompt" + (j + 1);
-        const answerKey = "Answer" + (j + 1);
+        const promptKey = "prompt" + (j + 1);
+        const answerKey = "answer" + (j + 1);
         console.log(promptKey);
         console.log(answerKey);
         applicants[i] = {
@@ -260,6 +260,25 @@ app.get("/applications/review/:jobID", async (req, res) => {
     }
     res.status(200).send(applicants);
   }
+  client.release();
+});
+
+app.patch("/applications", async (req, res) => {
+  const { accepted, applicationID } = req.body;
+  if (typeof accepted !== "boolean") {
+    return res.status(400).send("Passing wrong type of value");
+  }
+  const client = await moreThanMetricsDB.connect();
+  const updateApplication =
+    "UPDATE application_status SET reviewed = true, accepted = $1 WHERE application_id = $2";
+  client
+    .query(updateApplication, [accepted, applicationID])
+    .then(() => {
+      res.status(200).send("Application updated");
+    })
+    .catch((error) => {
+      res.status(500).send(error);
+    });
   client.release();
 });
 
@@ -331,6 +350,7 @@ app.post("/candidate/register", async (req, res) => {
     candidateEmail,
     candidatePassword,
     candidateName,
+    headline,
     candidatePhoneNumber,
     yearsInIndustryID,
   } = candidateDetails;
@@ -360,10 +380,11 @@ app.post("/candidate/register", async (req, res) => {
   );
   const accountID = accountIDQuery.rows[0].account_id;
   const insertCandidateDetails =
-    "INSERT INTO candidates (candidate_name, candidate_phone_number, candidate_years_in_industry_id, account_id) VALUES ($1, $2, $3, $4)";
+    "INSERT INTO candidates (candidate_name, headline, candidate_phone_number, candidate_years_in_industry_id, account_id) VALUES ($1, $2, $3, $4, $5)";
   await client
     .query(insertCandidateDetails, [
       candidateName,
+      headline,
       candidatePhoneNumber,
       yearsInIndustryID,
       accountID,
