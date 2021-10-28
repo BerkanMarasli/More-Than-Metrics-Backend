@@ -27,7 +27,7 @@ async function insertDummyData() {
 
   // Years in Industry Table
   insertQuery =
-    "INSERT INTO years_in_industry (category) VALUES ('0'), ('1-2'), ('3-4'), ('5+');";
+    "INSERT INTO years_in_industry (category) VALUES ('<1'), ('1'), ('2'), ('3'), ('4'), ('5+');";
   client
     .query(insertQuery)
     .then(() =>
@@ -37,7 +37,7 @@ async function insertDummyData() {
 
   // Number of Employees Table
   insertQuery =
-    "INSERT INTO number_of_employees (category) VALUES ('0-9'), ('10-25'), ('26-50'), ('51-99'), ('100-199'), ('200+');";
+    "INSERT INTO number_of_employees (category) VALUES ('<20'), ('20-99'), ('100-299'), ('300-499'), ('500-999'), ('1000+');";
   client
     .query(insertQuery)
     .then(() =>
@@ -105,6 +105,7 @@ async function insertDummyData() {
         "candidatePassword":"Testing123!",
         "candidatePasswordConfirmation":"Testing123!",
         "candidateName":"Sang ta",
+        "headline":"Exotic",
         "candidatePhoneNumber":447812389483,
         "yearsInIndustryID":2
     }
@@ -117,6 +118,7 @@ async function insertDummyData() {
         "candidatePassword":"Testing123!",
         "candidatePasswordConfirmation":"Testing123!",
         "candidateName":"Berkan Marasli",
+        "headline":"They call me Mr. Amazon",
         "candidatePhoneNumber":447817389483,
         "yearsInIndustryID":4
     }
@@ -235,6 +237,49 @@ async function insertDummyData() {
         "keyTechnologies":[7, 8, 9, 10, 11],
         "companyID":2
     }
+
+    POST http://localhost:8080/application
+    content-type: application/json
+
+    {
+        "candidateID":1,
+        "jobID":4,
+        "prompt1":2,
+        "answer1":"Pick me!",
+        "prompt2":5,
+        "answer2":"Feel me!",
+        "prompt3":6,
+        "answer3":"Hold me!"
+    }
+
+    POST http://localhost:8080/application
+    content-type: application/json
+
+    {
+        "candidateID":2,
+        "jobID":4,
+        "prompt1":2,
+        "answer1":"Darkness is in my veins",
+        "prompt2":4,
+        "answer2":"I live in the shadows",
+        "prompt3":5,
+        "answer3":"I am the night"
+    }
+
+    POST http://localhost:8080/application
+    content-type: application/json
+
+    {
+        "candidateID":1,
+        "jobID":1,
+        "prompt1":1,
+        "answer1":"This role brings out the colour in my eyes",
+        "prompt2":2,
+        "answer2":"My ability is far beyond anyone in this company, you would be grateful that I even allow you in my presence",
+        "prompt3":3,
+        "answer3":"I treat all humans with respect, too bad all I see around here are pigs grovelling in the mud"
+    }
+
   */
 
   client.release();

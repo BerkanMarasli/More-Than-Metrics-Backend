@@ -54,6 +54,7 @@ exports.isValidCandidate = function isValidCandidate(candidateDetails) {
     candidatePassword,
     candidatePasswordConfirmation,
     candidateName,
+    headline,
     candidatePhoneNumber,
     yearsInIndustryID,
   } = candidateDetails;
@@ -69,6 +70,9 @@ exports.isValidCandidate = function isValidCandidate(candidateDetails) {
   }
   if (candidateName.length < 1) {
     return "Candidate name not specified!";
+  }
+  if (headline.length < 1) {
+    return "Headline not specified!";
   }
   if (
     candidatePhoneNumber.toString().length !== 12 ||
