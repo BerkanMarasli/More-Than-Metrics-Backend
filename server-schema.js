@@ -82,7 +82,7 @@ async function createTables() {
 
   // CandidatesTechnologies Table
   const createCandidatesTechnologiesTable =
-    "CREATE TABLE candidates_technologies (account_id INTEGER NOT NULL, technology_id INTEGER NOT NULL, FOREIGN KEY (account_id) REFERENCES accounts(account_id), FOREIGN KEY (technology_id) REFERENCES technologies(technology_id));";
+    "CREATE TABLE candidates_technologies (candidate_id INTEGER NOT NULL, technology_id INTEGER NOT NULL, FOREIGN KEY (candidate_id) REFERENCES candidates(candidate_id), FOREIGN KEY (technology_id) REFERENCES technologies(technology_id));";
   client
     .query(createCandidatesTechnologiesTable)
     .then(() =>
@@ -92,7 +92,7 @@ async function createTables() {
 
   // Jobs Table
   const createJobsTable =
-    "CREATE TABLE jobs (job_id SERIAL PRIMARY KEY, job_title TEXT NOT NULL, job_description TEXT NOT NULL, location TEXT NOT NULL, salary TEXT NOT NULL, account_id INTEGER NOT NULL, FOREIGN KEY (account_id) REFERENCES accounts(account_id));";
+    "CREATE TABLE jobs (job_id SERIAL PRIMARY KEY, job_title TEXT NOT NULL, job_description TEXT NOT NULL, location TEXT NOT NULL, salary TEXT NOT NULL, company_id INTEGER NOT NULL, FOREIGN KEY (company_id) REFERENCES companies(company_id));";
   client
     .query(createJobsTable)
     .then(() => console.log("Created jobs table successfully"))
@@ -116,7 +116,7 @@ async function createTables() {
 
   // ApplicationStatus Table
   const createApplicationStatusTable =
-    "CREATE TABLE application_status (application_id SERIAL PRIMARY KEY, reviewed BOOL NOT NULL, accepted BOOL NOT NULL, account_id INTEGER NOT NULL, job_id INTEGER NOT NULL, FOREIGN KEY (account_id) REFERENCES accounts(account_id), FOREIGN KEY (job_id) REFERENCES jobs(job_id));";
+    "CREATE TABLE application_status (application_id SERIAL PRIMARY KEY, reviewed BOOL NOT NULL, accepted BOOL NOT NULL, candidate_id INTEGER NOT NULL, job_id INTEGER NOT NULL, FOREIGN KEY (candidate_id) REFERENCES candidates(candidate_id), FOREIGN KEY (job_id) REFERENCES jobs(job_id));";
   client
     .query(createApplicationStatusTable)
     .then(() => console.log("Created application_status table successfully"))

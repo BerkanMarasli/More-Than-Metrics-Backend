@@ -93,7 +93,7 @@ async function insertDummyData() {
         "companyLocation":"United States",
         "numberOfEmployeesID":6,
         "femalePercentage": 58,
-        "retentionRate": 90
+        "retentionRate": 90,
         "imageURL": "https://www.freepnglogos.com/uploads/google-logo-png/google-logo-png-google-logos-vector-eps-cdr-svg-download-10.png"
     }
 
@@ -124,7 +124,7 @@ async function insertDummyData() {
 
   // CandidatesTechnologies Table
   insertQuery =
-    "INSERT INTO candidates_technologies (account_id, technology_id) VALUES (3, 10), (3, 4), (3, 6), (3, 3), (3, 7), (3, 1), (4, 4), (4, 6), (4, 11), (4, 1);";
+    "INSERT INTO candidates_technologies (candidate_id, technology_id) VALUES (1, 10), (1, 4), (1, 6), (1, 3), (1, 7), (1, 1), (2, 4), (2, 6), (2, 11), (2, 1);";
   client
     .query(insertQuery)
     .then(() => console.log("Inserted into prompts table successfully"))
@@ -142,7 +142,7 @@ async function insertDummyData() {
         "salary":"40000-55000",
         "keyResponsibilities":["Do CSS", "Do more CSS", "Finally do even more CSS"],
         "keyTechnologies":[1, 2, 3, 4],
-        "accountID":1
+        "companyID":1
     }
 
     POST http://localhost:8080/jobs
@@ -155,7 +155,7 @@ async function insertDummyData() {
         "salary":"65000-80000",
         "keyResponsibilities":["Databases", "REST APIs", "Caching"],
         "keyTechnologies":[1, 2, 6, 10, 8, 5],
-        "accountID":2
+        "companyID":2
     }
 
     POST http://localhost:8080/jobs
@@ -168,7 +168,7 @@ async function insertDummyData() {
         "salary":"150000-180000",
         "keyResponsibilities":["Managing", "Knowledge", "Interest for technology"],
         "keyTechnologies":[1, 3, 2, 6, 10, 8, 5, 7, 11],
-        "accountID":2
+        "companyID":2
     }
 
     POST http://localhost:8080/jobs
@@ -181,7 +181,7 @@ async function insertDummyData() {
         "salary":"Competitive",
         "keyResponsibilities":["Dealing with clients", "Expert opinion", "Just be proactive"],
         "keyTechnologies":[1, 6, 10, 7],
-        "accountID":1
+        "companyID":1
     }
 
     POST http://localhost:8080/jobs
@@ -194,7 +194,7 @@ async function insertDummyData() {
         "salary":"30000",
         "keyResponsibilities":["Learning", "Contributing", "HeyHo"],
         "keyTechnologies":[1, 2, 3, 5, 8, 11],
-        "accountID":1
+        "companyID":1
     }
 
     POST http://localhost:8080/jobs
@@ -207,7 +207,7 @@ async function insertDummyData() {
         "salary":"40000",
         "keyResponsibilities":["Learning", "Contributing", "HeyHo"],
         "keyTechnologies":[1, 2, 3, 5, 8, 11],
-        "accountID":1
+        "companyID":1
     }
 
     POST http://localhost:8080/jobs
@@ -220,7 +220,7 @@ async function insertDummyData() {
         "salary":"500000",
         "keyResponsibilities":["Be a bad ass", "Learn to share the money", "Write code"],
         "keyTechnologies":[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-        "accountID":1
+        "companyID":1
     }
 
     POST http://localhost:8080/jobs
@@ -233,7 +233,7 @@ async function insertDummyData() {
         "salary":"1400000",
         "keyResponsibilities":["Get to the scene as fast as possible", "Be able to quickly and efficiently clean out stains", "Be able to clean up and leave no traces of biological data"],
         "keyTechnologies":[7, 8, 9, 10, 11],
-        "accountID":3
+        "companyID":2
     }
   */
 
