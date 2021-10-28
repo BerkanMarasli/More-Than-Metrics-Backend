@@ -86,9 +86,9 @@ app.get("/company/:companyName", async (req, res) => {
   const client = await moreThanMetricsDB.connect()
   const companyName = req.params.companyName
   const getCompanyDetails =
-    "SELECT * FROM companies JOIN number_of_employees ON number_of_employees.number_of_employees_id = companies.company_number_of_employees_id WHERE company_name = $1";
-  const queryResult = client.query(getCompanyDetails, [companyName]);
-  const companyDetails = (await queryResult).rows;
+    "SELECT * FROM companies JOIN number_of_employees ON number_of_employees.number_of_employees_id = companies.company_number_of_employees_id WHERE company_name = $1"
+  const queryResult = client.query(getCompanyDetails, [companyName])
+  const companyDetails = (await queryResult).rows
   if (companyDetails.length < 1) {
     res.status(500).send("No company!")
   } else {
@@ -218,76 +218,72 @@ app.post("/jobs", async (req, res) => {
 })
 
 app.get("/applications/candidate/:candidateID", async (req, res) => {
-  const client = await moreThanMetricsDB.connect();
-  const candidateID = req.params.candidateID;
+  const client = await moreThanMetricsDB.connect()
+  const candidateID = req.params.candidateID
   const getCandidateApplications =
-    "SELECT application_id, jobs.job_id, job_title, company_name, reviewed, accepted FROM application_status JOIN jobs ON jobs.job_id = application_status.job_id JOIN companies ON companies.company_id = jobs.company_id WHERE candidate_id = $1";
-  const queryResult = await client.query(getCandidateApplications, [
-    candidateID,
-  ]);
-  const candidateApplications = queryResult.rows;
+    "SELECT application_id, jobs.job_id, job_title, company_name, reviewed, accepted FROM application_status JOIN jobs ON jobs.job_id = application_status.job_id JOIN companies ON companies.company_id = jobs.company_id WHERE candidate_id = $1"
+  const queryResult = await client.query(getCandidateApplications, [candidateID])
+  const candidateApplications = queryResult.rows
   if (candidateApplications.length < 1) {
-    res.status(200).send("No applications made");
+    res.status(200).send("No applications made")
   } else {
-    res.status(200).send(candidateApplications);
+    res.status(200).send(candidateApplications)
   }
-  client.release();
-});
+  client.release()
+})
 
 app.get("/applications/review/:jobID", async (req, res) => {
   const client = await moreThanMetricsDB.connect()
   const jobID = req.params.jobID
   const getApplications =
-    "SELECT application_id, application_status.candidate_id, headline FROM application_status  JOIN candidates ON candidates.candidate_id = application_status.candidate_id WHERE job_id = $1 AND reviewed = false";
-  const queryResult = await client.query(getApplications, [jobID]);
-  const applicants = queryResult.rows;
+    "SELECT application_id, application_status.candidate_id, headline FROM application_status  JOIN candidates ON candidates.candidate_id = application_status.candidate_id WHERE job_id = $1 AND reviewed = false"
+  const queryResult = await client.query(getApplications, [jobID])
+  const applicants = queryResult.rows
   if (applicants.length < 1) {
     res.status(400).send("No applicants")
   } else {
     for (let i = 0; i < applicants.length; i++) {
-      console.log(applicants[i]);
+      console.log(applicants[i])
       const getResponses =
-        "SELECT prompt, answer FROM application_responses JOIN prompts ON prompts.prompt_id = application_responses.prompt_id WHERE application_id = $1";
-      const responsesQuery = await client.query(getResponses, [
-        applicants[i].application_id,
-      ]);
-      const responses = responsesQuery.rows;
+        "SELECT prompt, answer FROM application_responses JOIN prompts ON prompts.prompt_id = application_responses.prompt_id WHERE application_id = $1"
+      const responsesQuery = await client.query(getResponses, [applicants[i].application_id])
+      const responses = responsesQuery.rows
       for (let j = 0; j < responses.length; j++) {
-        console.log(responses[j]);
-        const promptKey = "prompt" + (j + 1);
-        const answerKey = "answer" + (j + 1);
-        console.log(promptKey);
-        console.log(answerKey);
+        console.log(responses[j])
+        const promptKey = "prompt" + (j + 1)
+        const answerKey = "answer" + (j + 1)
+        console.log(promptKey)
+        console.log(answerKey)
         applicants[i] = {
           ...applicants[i],
           [promptKey]: responses[j].prompt,
           [answerKey]: responses[j].answer,
-        };
+        }
       }
     }
-    res.status(200).send(applicants);
+    res.status(200).send(applicants)
   }
   client.release()
 })
 
 app.patch("/applications/assess", async (req, res) => {
-  const { accepted, applicationID } = req.body;
+  const { accepted, applicationID } = req.body
   if (typeof accepted !== "boolean") {
-    return res.status(400).send("Passing wrong type of value");
+    return res.status(400).send("Passing wrong type of value")
   }
-  const client = await moreThanMetricsDB.connect();
+  const client = await moreThanMetricsDB.connect()
   const updateApplication =
-    "UPDATE application_status SET reviewed = true, accepted = $1 WHERE application_id = $2";
+    "UPDATE application_status SET reviewed = true, accepted = $1 WHERE application_id = $2"
   client
     .query(updateApplication, [accepted, applicationID])
     .then(() => {
-      res.status(200).send("Application updated");
+      res.status(200).send("Application updated")
     })
-    .catch((error) => {
-      res.status(500).send(error);
-    });
-  client.release();
-});
+    .catch(error => {
+      res.status(500).send(error)
+    })
+  client.release()
+})
 
 app.get("/applications/accepted/:jobID", async (req, res) => {
   const client = await moreThanMetricsDB.connect()
@@ -352,34 +348,30 @@ app.post("/candidate/register", async (req, res) => {
     headline,
     candidatePhoneNumber,
     yearsInIndustryID,
-  } = candidateDetails;
+  } = candidateDetails
   // Checks for duplicate email
   if (await isEmailTaken(candidateEmail)) {
-    return res.status(400).send("Email address already taken!");
+    return res.status(400).send("Email address already taken!")
   }
   // Validating candidate details
-  const validCandidateResponse = isValidCandidate(candidateDetails);
+  const validCandidateResponse = isValidCandidate(candidateDetails)
   if (validCandidateResponse !== true) {
-    return res.status(400).send(validCandidateResponse);
+    return res.status(400).send(validCandidateResponse)
   }
   // Creating new account for candidate
-  const newAccountResponse = await insertNewAccount(
-    candidateEmail,
-    candidatePassword,
-    1
-  );
+  const newAccountResponse = await insertNewAccount(candidateEmail, candidatePassword, 1)
   if (newAccountResponse !== "Registered new account!") {
-    return res.status(500).send(newAccountResponse);
+    return res.status(500).send(newAccountResponse)
   }
   // Inserting (additional) details for candidate
-  const client = await moreThanMetricsDB.connect();
+  const client = await moreThanMetricsDB.connect()
   const accountIDQuery = await client.query(
     "SELECT account_id FROM accounts WHERE account_email = $1",
     [candidateEmail]
-  );
-  const accountID = accountIDQuery.rows[0].account_id;
+  )
+  const accountID = accountIDQuery.rows[0].account_id
   const insertCandidateDetails =
-    "INSERT INTO candidates (candidate_name, headline, candidate_phone_number, candidate_years_in_industry_id, account_id) VALUES ($1, $2, $3, $4, $5)";
+    "INSERT INTO candidates (candidate_name, headline, candidate_phone_number, candidate_years_in_industry_id, account_id) VALUES ($1, $2, $3, $4, $5)"
   await client
     .query(insertCandidateDetails, [
       candidateName,
@@ -389,16 +381,16 @@ app.post("/candidate/register", async (req, res) => {
       accountID,
     ])
     .then(() => {
-      res.status(200).send("Added new candidate details!");
+      res.status(200).send("Added new candidate details!")
     })
-    .catch((error) => {
-      res.status(500).send(error);
-    });
-  client.release();
-});
+    .catch(error => {
+      res.status(500).send(error)
+    })
+  client.release()
+})
 
 app.patch("/candidate/update", async (req, res) => {
-  const candidateDetails = req.body;
+  const candidateDetails = req.body
   const {
     candidateEmail,
     candidatePassword,
@@ -429,7 +421,7 @@ app.patch("/candidate/update", async (req, res) => {
   )
   const accountID = accountIDQuery.rows[0].account_id
   const insertCandidateDetails =
-    "INSERT INTO candidates (candidate_name, headline, candidate_phone_number, candidate_years_in_industry_id, account_id) VALUES ($1, $2, $3, $4, $5)";
+    "INSERT INTO candidates (candidate_name, headline, candidate_phone_number, candidate_years_in_industry_id, account_id) VALUES ($1, $2, $3, $4, $5)"
   await client
     .query(insertCandidateDetails, [
       candidateName,
@@ -505,6 +497,7 @@ app.post("/company/register", async (req, res) => {
 
 app.post("/login", async (req, res) => {
   const { email, password } = req.body
+  console.log(email, password)
   const client = await moreThanMetricsDB.connect()
   const getAccountLoginInfo =
     "SELECT account_email, account_hashed_password FROM accounts WHERE account_email = $1"
@@ -519,12 +512,14 @@ app.post("/login", async (req, res) => {
       const hashedPassword = accountInfo.account_hashed_password
       const isPasswordCorrect = await bcrypt.compare(password, hashedPassword)
       if (isPasswordCorrect) {
-        res.status(200).send("Successfully logged in!")
+        res.status(200).send({ message: "Successfully logged in!" })
       } else {
-        res.status(400).send("Password is invalid!")
+        res.status(400).send({ message: "Password is invalid!" })
       }
     })
     .catch(error => {
+      console.log("helosss")
+      // move no account found error into here!
       res.status(500).send({ error })
     })
   client.release()
