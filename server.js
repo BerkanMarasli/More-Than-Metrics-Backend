@@ -461,25 +461,26 @@ app.post("/company/register", async (req, res) => {
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
   const client = await moreThanMetricsDB.connect();
+
   const getAccountLoginInfo =
     "SELECT account_email, account_hashed_password FROM accounts WHERE account_email = $1";
   client
     .query(getAccountLoginInfo, [email])
     .then(async (queryResult) => {
       const [accountInfo] = queryResult.rows;
-      if (accountInfo.length === 0) {
-        client.release();
-        return res.status(400).send("Account does not exist!");
+      if (!queryResult.rowCount && !(await isEmailTaken(email))) {
+        return res.status(400).send({ message: "Account does not exist!" });
       }
       const hashedPassword = accountInfo.account_hashed_password;
       const isPasswordCorrect = await bcrypt.compare(password, hashedPassword);
       if (isPasswordCorrect) {
-        res.status(200).send("Successfully logged in!");
+        res.status(200).send({ message: "Successfully logged in!" });
       } else {
-        res.status(400).send("Password is invalid!");
+        res.status(400).send({ message: "Password is invalid!" });
       }
     })
     .catch((error) => {
+      console.log(error);
       res.status(500).send({ error });
     });
   client.release();
