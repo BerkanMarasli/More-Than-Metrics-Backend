@@ -1,4 +1,9 @@
-const { isValidCompany, isValidCandidate, isValidJobDetails } = require("./server-validation.js")
+const {
+  isValidCompany,
+  isValidCandidate,
+  isValidJobDetails,
+  isValidApplication,
+} = require("./server-validation.js")
 const { Pool } = require("pg")
 const express = require("express")
 const bcrypt = require("bcryptjs")
@@ -81,7 +86,7 @@ app.get("/company/:companyName", async (req, res) => {
   const client = await moreThanMetricsDB.connect()
   const companyName = req.params.companyName
   const getCompanyDetails =
-    "SELECT * FROM companies JOIN number_of_employees ON number_of_employees.number_of_employees_id = companies.company_number_of_employees_id WHERE company_name = $1"
+    "SELECT * FROM companies JOIN number_of_employees ON number_of_employees.number_of_employees_id = companies.number_of_employees_id WHERE company_name = $1"
   const queryResult = client.query(getCompanyDetails, [companyName])
   const companyDetails = (await queryResult).rows
   if (companyDetails.length < 1) {
@@ -96,7 +101,7 @@ app.get("/jobs/company/:companyName", async (req, res) => {
   const client = await moreThanMetricsDB.connect()
   const companyName = req.params.companyName.replaceAll("%20", "")
   const getCompanyJobs =
-    "SELECT * FROM jobs JOIN companies ON companies.account_id = jobs.account_id WHERE company_name = $1"
+    "SELECT * FROM jobs JOIN companies ON companies.company_id = jobs.company_id WHERE company_name = $1"
   const queryResult = client.query(getCompanyJobs, [companyName])
   const companyJobs = (await queryResult).rows
   if (companyJobs.length < 1) {
@@ -113,7 +118,7 @@ app.get("/jobs/:search?", async (req, res) => {
   if (search === undefined) {
     search = ""
     const getAllJobs =
-      "SELECT job_id, job_title, company_name FROM jobs JOIN companies ON companies.account_id = jobs.account_id ORDER BY job_id"
+      "SELECT job_id, job_title, company_name FROM jobs JOIN companies ON companies.company_id = jobs.company_id ORDER BY job_id"
     const queryResult = await client.query(getAllJobs)
     const jobs = queryResult.rows
     if (jobs.length < 1) {
@@ -124,7 +129,7 @@ app.get("/jobs/:search?", async (req, res) => {
     client.release()
   } else {
     const getJobs =
-      "SELECT job_id, job_title, company_name FROM jobs JOIN companies ON companies.account_id = jobs.account_id WHERE LOWER(job_title) LIKE $1 OR LOWER(company_name) LIKE $1 ORDER BY job_id"
+      "SELECT job_id, job_title, company_name FROM jobs JOIN companies ON companies.company_id = jobs.company_id WHERE LOWER(job_title) LIKE $1 OR LOWER(company_name) LIKE $1 ORDER BY job_id"
     const queryResult = await client.query(getJobs, ["%" + search.toLowerCase() + "%"])
     const jobs = queryResult.rows
     if (jobs.length < 1) {
@@ -140,7 +145,7 @@ app.get("/job/:jobID", async (req, res) => {
   const client = await moreThanMetricsDB.connect()
   let jobID = req.params.jobID
   const getJobDetails =
-    "SELECT * , jobs.location FROM jobs JOIN companies ON companies.account_id = jobs.account_id WHERE jobs.job_id = $1"
+    "SELECT * , jobs.location FROM jobs JOIN companies ON companies.company_id = jobs.company_id WHERE jobs.job_id = $1"
   const queryResult = await client.query(getJobDetails, [jobID])
   const jobDetails = queryResult.rows
   if (jobDetails.length < 1) {
@@ -168,7 +173,7 @@ app.get("/job/:jobID", async (req, res) => {
 
 app.post("/jobs", async (req, res) => {
   const jobDetails = req.body
-  const { jobTitle, jobDesc, location, salary, keyResponsibilities, keyTechnologies, accountID } =
+  const { jobTitle, jobDesc, location, salary, keyResponsibilities, keyTechnologies, companyID } =
     jobDetails
   const validJobDetails = isValidJobDetails(jobDetails)
   if (validJobDetails !== true) {
@@ -176,9 +181,9 @@ app.post("/jobs", async (req, res) => {
   }
   const client = await moreThanMetricsDB.connect()
   const insertNewJob =
-    "INSERT INTO jobs(job_title, job_description, location, salary, account_id) VALUES ($1, $2, $3, $4, $5) RETURNING job_id"
+    "INSERT INTO jobs(job_title, job_description, location, salary, company_id) VALUES ($1, $2, $3, $4, $5) RETURNING job_id"
   const queryResult = await client
-    .query(insertNewJob, [jobTitle, jobDesc, location, salary, accountID])
+    .query(insertNewJob, [jobTitle, jobDesc, location, salary, companyID])
     .catch(error => {
       client.release()
       return res.status(500).send(error)
@@ -231,7 +236,7 @@ app.get("/applications/accepted/:jobID", async (req, res) => {
   const client = await moreThanMetricsDB.connect()
   const jobID = req.params.jobID
   const getSuccessfulApplicants =
-    "SELECT application_id, candidate_name, candidate_phone_number FROM application_status JOIN candidates ON candidates.account_id = application_status.account_id WHERE job_id = $1 AND reviewed = true AND accepted = true"
+    "SELECT application_id, candidate_name, candidate_phone_number FROM application_status JOIN candidates ON candidates.candidate_id = application_status.candidate_id WHERE job_id = $1 AND reviewed = true AND accepted = true"
   const queryResult = await client.query(getSuccessfulApplicants, [jobID])
   const successfulApplicants = queryResult.rows
   if (successfulApplicants.length < 1) {
@@ -239,6 +244,45 @@ app.get("/applications/accepted/:jobID", async (req, res) => {
   } else {
     res.status(200).send(successfulApplicants)
   }
+  client.release()
+})
+
+app.post("/application", async (req, res) => {
+  const applicationDetails = req.body
+  const { candidateID, jobID, prompt1, answer1, prompt2, answer2, prompt3, answer3 } =
+    applicationDetails
+  const validApplicationResponse = isValidApplication(applicationDetails)
+  if (validApplicationResponse !== true) {
+    return res.status(400).send(validApplicationResponse)
+  }
+  const client = await moreThanMetricsDB.connect()
+  const insertNewApplication =
+    "INSERT INTO application_status(reviewed, accepted, candidate_id, job_id) VALUES (false, false, $1, $2) RETURNING application_id"
+  const queryResult = await client
+    .query(insertNewApplication, [candidateID, jobID])
+    .catch(error => {
+      client.release()
+      return res.status(500).send(error)
+    })
+  let applicationID = queryResult.rows[0].application_id
+  const insertApplicationResponses =
+    "INSERT INTO application_responses(application_id, prompt_id, answer) VALUES ($1, $2, $3), ($1, $4 ,$5), ($1, $6, $7)"
+  client
+    .query(insertApplicationResponses, [
+      applicationID,
+      prompt1,
+      answer1,
+      prompt2,
+      answer2,
+      prompt3,
+      answer3,
+    ])
+    .then(() => {
+      res.status(200).send("Added application details!")
+    })
+    .catch(error => {
+      res.status(500).send(error)
+    })
   client.release()
 })
 
@@ -301,6 +345,7 @@ app.post("/company/register", async (req, res) => {
     numberOfEmployeesID,
     femalePercentage,
     retentionRate,
+    imageURL,
   } = companyDetails
   // Checks for duplicate email
   if (await isEmailTaken(companyEmail)) {
@@ -324,7 +369,7 @@ app.post("/company/register", async (req, res) => {
   )
   const accountID = accountIDQuery.rows[0].account_id
   const insertCompanyDetails =
-    "INSERT INTO companies (company_name, company_bio, location, company_number_of_employees_id, company_female_employee_percentage, company_retention_rate, account_id) VALUES ($1, $2, $3, $4, $5, $6, $7);"
+    "INSERT INTO companies (company_name, company_bio, location, company_number_of_employees_id, company_female_employee_percentage, company_retention_rate, image_url, account_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8);"
   await client
     .query(insertCompanyDetails, [
       companyName,
@@ -333,6 +378,7 @@ app.post("/company/register", async (req, res) => {
       numberOfEmployeesID,
       femalePercentage,
       retentionRate,
+      imageURL,
       accountID,
     ])
     .then(() => {

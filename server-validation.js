@@ -95,6 +95,7 @@ exports.isValidCompany = function isValidCompany(companyDetails) {
     numberOfEmployeesID,
     femalePercentage,
     retentionRate,
+    imageURL,
   } = companyDetails;
 
   const validCompanyResponse = isValidAccountDetails(
@@ -121,6 +122,47 @@ exports.isValidCompany = function isValidCompany(companyDetails) {
   if (retentionRate === undefined || retentionRate === null) {
     return "Retention rate not specified";
   }
+  if (imageURL.length < 1) {
+    return "Image URL not specified";
+  }
+  return true;
+};
+
+exports.isValidApplication = function isValidApplication(applicationDetails) {
+  const {
+    candidateID,
+    jobID,
+    prompt1,
+    answer1,
+    prompt2,
+    answer2,
+    prompt3,
+    answer3,
+  } = applicationDetails;
+  if (candidateID === undefined || candidateID === null) {
+    return "Candidate account not specified";
+  }
+  if (jobID === undefined || jobID === null) {
+    return "Job applying for not specified";
+  }
+  if (prompt1 === undefined || prompt1 === null) {
+    return "First prompt not given";
+  }
+  if (prompt2 === undefined || prompt2 === null) {
+    return "Second prompt not given";
+  }
+  if (prompt3 === undefined || prompt3 === null) {
+    return "Third prompt not given";
+  }
+  if (answer1.length < 1) {
+    return "No answer for question 1";
+  }
+  if (answer2.length < 1) {
+    return "No answer for question 2";
+  }
+  if (answer3.length < 1) {
+    return "No answer for question 3";
+  }
   return true;
 };
 
@@ -136,10 +178,3 @@ function isValidAccountDetails(email, password, confirmation) {
   }
   return true;
 }
-
-exports.isInputEmpty = function isInputEmpty(input) {
-  if (input.length < 1) {
-    return true;
-  }
-  return false;
-};

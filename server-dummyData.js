@@ -6,57 +6,62 @@ INSERT INTO companies(company_name, company_bio, location, company_number_of_emp
 
 */
 
-const { Pool } = require("pg")
+const { Pool } = require("pg");
 
 const DBSTRING =
-  "postgres://hjtqvwqx:i-lgggJgY-howhBMFWrhsLpMOel53sxn@surus.db.elephantsql.com/hjtqvwqx"
+  "postgres://hjtqvwqx:i-lgggJgY-howhBMFWrhsLpMOel53sxn@surus.db.elephantsql.com/hjtqvwqx";
 
-const moreThanMetricsDB = new Pool({ connectionString: DBSTRING })
-let insertQuery
+const moreThanMetricsDB = new Pool({ connectionString: DBSTRING });
+let insertQuery;
 
 async function insertDummyData() {
-  const client = await moreThanMetricsDB.connect()
+  const client = await moreThanMetricsDB.connect();
 
   // Account Type Table
   insertQuery =
-    "INSERT INTO account_type (account_type_category) VALUES ('Candidate'), ('Company');"
+    "INSERT INTO account_type (account_type_category) VALUES ('Candidate'), ('Company');";
   client
     .query(insertQuery)
     .then(() => console.log("Inserted into account_type table successfully"))
-    .catch(error => console.log(error))
+    .catch((error) => console.log(error));
 
   // Years in Industry Table
-  insertQuery = "INSERT INTO years_in_industry (category) VALUES ('0'), ('1-2'), ('3-4'), ('5+');"
+  insertQuery =
+    "INSERT INTO years_in_industry (category) VALUES ('0'), ('1-2'), ('3-4'), ('5+');";
   client
     .query(insertQuery)
-    .then(() => console.log("Inserted into years_in_industry table successfully"))
-    .catch(error => console.log(error))
+    .then(() =>
+      console.log("Inserted into years_in_industry table successfully")
+    )
+    .catch((error) => console.log(error));
 
   // Number of Employees Table
   insertQuery =
-    "INSERT INTO number_of_employees (category) VALUES ('0-9'), ('10-25'), ('26-50'), ('51-99'), ('100-199'), ('200+');"
+    "INSERT INTO number_of_employees (category) VALUES ('0-9'), ('10-25'), ('26-50'), ('51-99'), ('100-199'), ('200+');";
   client
     .query(insertQuery)
-    .then(() => console.log("Inserted into number_of_employees table successfully"))
-    .catch(error => console.log(error))
+    .then(() =>
+      console.log("Inserted into number_of_employees table successfully")
+    )
+    .catch((error) => console.log(error));
 
   // Technologies Table
   insertQuery =
-    "INSERT INTO technologies (technology_name) VALUES ('Javascript'), ('Python'), ('React'), ('SQL'), ('NodeJS'), ('Deno'), ('Angular'), ('Java'), ('HTML5'), ('CSS3'), ('Express');"
+    "INSERT INTO technologies (technology_name) VALUES ('Javascript'), ('Python'), ('React'), ('SQL'), ('NodeJS'), ('Deno'), ('Angular'), ('Java'), ('HTML5'), ('CSS3'), ('Express');";
   client
     .query(insertQuery)
     .then(() => console.log("Inserted into technologies table successfully"))
-    .catch(error => console.log(error))
+    .catch((error) => console.log(error));
 
   // Prompts Table
   insertQuery =
-    "INSERT INTO prompts (prompt) VALUES ('What is your fav colour?'), ('How happy are you?'), ('What is the meaning of life?'), ('How happy are you currently?'), ('Tell me about something no-one else knows'), ('How many dogs, cats and pigs do you own?');"
+    "INSERT INTO prompts (prompt) VALUES ('What is your fav colour?'), ('How happy are you?'), ('What is the meaning of life?'), ('How happy are you currently?'), ('Tell me about something no-one else knows'), ('How many dogs, cats and pigs do you own?');";
   client
     .query(insertQuery)
     .then(() => console.log("Inserted into prompts table successfully"))
-    .catch(error => console.log(error))
+    .catch((error) => console.log(error));
 
-  return
+  return;
 
   // use REST Client
   /*
@@ -72,7 +77,8 @@ async function insertDummyData() {
         "companyLocation":"United States",
         "numberOfEmployeesID":6,
         "femalePercentage": 55,
-        "retentionRate": 67
+        "retentionRate": 67,
+        "imageURL": "https://cdn2.iconfinder.com/data/icons/social-media-2285/512/1_Instagram_colored_svg_1-512.png"
     }
 
     POST http://localhost:8080/company/register
@@ -87,7 +93,8 @@ async function insertDummyData() {
         "companyLocation":"United States",
         "numberOfEmployeesID":6,
         "femalePercentage": 58,
-        "retentionRate": 90
+        "retentionRate": 90,
+        "imageURL": "https://www.freepnglogos.com/uploads/google-logo-png/google-logo-png-google-logos-vector-eps-cdr-svg-download-10.png"
     }
 
     POST http://localhost:8080/candidate/register
@@ -117,11 +124,11 @@ async function insertDummyData() {
 
   // CandidatesTechnologies Table
   insertQuery =
-    "INSERT INTO candidates_technologies (account_id, technology_id) VALUES (3, 10), (3, 4), (3, 6), (3, 3), (3, 7), (3, 1), (4, 4), (4, 6), (4, 11), (4, 1);"
+    "INSERT INTO candidates_technologies (candidate_id, technology_id) VALUES (1, 10), (1, 4), (1, 6), (1, 3), (1, 7), (1, 1), (2, 4), (2, 6), (2, 11), (2, 1);";
   client
     .query(insertQuery)
     .then(() => console.log("Inserted into prompts table successfully"))
-    .catch(error => console.log(error))
+    .catch((error) => console.log(error));
 
   // use REST Client
   /*
@@ -135,7 +142,7 @@ async function insertDummyData() {
         "salary":"40000-55000",
         "keyResponsibilities":["Do CSS", "Do more CSS", "Finally do even more CSS"],
         "keyTechnologies":[1, 2, 3, 4],
-        "accountID":1
+        "companyID":1
     }
 
     POST http://localhost:8080/jobs
@@ -148,7 +155,7 @@ async function insertDummyData() {
         "salary":"65000-80000",
         "keyResponsibilities":["Databases", "REST APIs", "Caching"],
         "keyTechnologies":[1, 2, 6, 10, 8, 5],
-        "accountID":2
+        "companyID":2
     }
 
     POST http://localhost:8080/jobs
@@ -161,7 +168,7 @@ async function insertDummyData() {
         "salary":"150000-180000",
         "keyResponsibilities":["Managing", "Knowledge", "Interest for technology"],
         "keyTechnologies":[1, 3, 2, 6, 10, 8, 5, 7, 11],
-        "accountID":2
+        "companyID":2
     }
 
     POST http://localhost:8080/jobs
@@ -174,7 +181,7 @@ async function insertDummyData() {
         "salary":"Competitive",
         "keyResponsibilities":["Dealing with clients", "Expert opinion", "Just be proactive"],
         "keyTechnologies":[1, 6, 10, 7],
-        "accountID":1
+        "companyID":1
     }
 
     POST http://localhost:8080/jobs
@@ -187,7 +194,7 @@ async function insertDummyData() {
         "salary":"30000",
         "keyResponsibilities":["Learning", "Contributing", "HeyHo"],
         "keyTechnologies":[1, 2, 3, 5, 8, 11],
-        "accountID":1
+        "companyID":1
     }
 
     POST http://localhost:8080/jobs
@@ -200,7 +207,7 @@ async function insertDummyData() {
         "salary":"40000",
         "keyResponsibilities":["Learning", "Contributing", "HeyHo"],
         "keyTechnologies":[1, 2, 3, 5, 8, 11],
-        "accountID":1
+        "companyID":1
     }
 
     POST http://localhost:8080/jobs
@@ -213,11 +220,24 @@ async function insertDummyData() {
         "salary":"500000",
         "keyResponsibilities":["Be a bad ass", "Learn to share the money", "Write code"],
         "keyTechnologies":[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-        "accountID":1
+        "companyID":1
+    }
+
+    POST http://localhost:8080/jobs
+    content-type: application/json
+
+    {
+        "jobTitle":"Janitor",
+        "jobDesc":"Clean up the Crim- *ahem* I mean clean up the dirt and dust that is detrimental to the company",
+        "location":"Las Vegas",
+        "salary":"1400000",
+        "keyResponsibilities":["Get to the scene as fast as possible", "Be able to quickly and efficiently clean out stains", "Be able to clean up and leave no traces of biological data"],
+        "keyTechnologies":[7, 8, 9, 10, 11],
+        "companyID":2
     }
   */
 
-  client.release()
+  client.release();
 }
 
-insertDummyData()
+insertDummyData();
