@@ -86,7 +86,7 @@ app.get("/company/:companyName", async (req, res) => {
   const client = await moreThanMetricsDB.connect()
   const companyName = req.params.companyName
   const getCompanyDetails =
-    "SELECT * FROM companies JOIN number_of_employees ON number_of_employees.number_of_employees_id = companies.number_of_employees_id WHERE company_name = $1"
+    "SELECT * FROM companies JOIN number_of_employees ON number_of_employees.number_of_employees_id = companies.company_number_of_employees_id WHERE company_name = $1"
   const queryResult = client.query(getCompanyDetails, [companyName])
   const companyDetails = (await queryResult).rows
   if (companyDetails.length < 1) {
