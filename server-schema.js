@@ -66,7 +66,7 @@ async function createTables() {
 
   // Candidates Table
   const createCandidatesTable =
-    "CREATE TABLE candidates (candidate_id SERIAL PRIMARY KEY, candidate_name TEXT NOT NULL, candidate_phone_number BIGINT NOT NULL, candidate_years_in_industry_id INTEGER NOT NULL, account_id INTEGER NOT NULL, FOREIGN KEY (candidate_years_in_industry_id) REFERENCES years_in_industry(years_in_industry_id), FOREIGN KEY (account_id) REFERENCES accounts(account_id));";
+    "CREATE TABLE candidates (candidate_id SERIAL PRIMARY KEY, candidate_name TEXT NOT NULL, headline TEXT NOT NULL, candidate_phone_number BIGINT NOT NULL, candidate_years_in_industry_id INTEGER NOT NULL, account_id INTEGER NOT NULL, FOREIGN KEY (candidate_years_in_industry_id) REFERENCES years_in_industry(years_in_industry_id), FOREIGN KEY (account_id) REFERENCES accounts(account_id));";
   client
     .query(createCandidatesTable)
     .then(() => console.log("Created candidates table successfully"))

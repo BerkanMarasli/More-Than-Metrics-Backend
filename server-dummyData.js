@@ -105,6 +105,7 @@ async function insertDummyData() {
         "candidatePassword":"Testing123!",
         "candidatePasswordConfirmation":"Testing123!",
         "candidateName":"Sang ta",
+        "headline":"Exotic",
         "candidatePhoneNumber":447812389483,
         "yearsInIndustryID":2
     }
@@ -117,6 +118,7 @@ async function insertDummyData() {
         "candidatePassword":"Testing123!",
         "candidatePasswordConfirmation":"Testing123!",
         "candidateName":"Berkan Marasli",
+        "headline":"They call me Mr. Amazon",
         "candidatePhoneNumber":447817389483,
         "yearsInIndustryID":4
     }
@@ -235,6 +237,49 @@ async function insertDummyData() {
         "keyTechnologies":[7, 8, 9, 10, 11],
         "companyID":2
     }
+
+    POST http://localhost:8080/application
+    content-type: application/json
+
+    {
+        "candidateID":1,
+        "jobID":4,
+        "prompt1":2,
+        "answer1":"Pick me!",
+        "prompt2":5,
+        "answer2":"Feel me!",
+        "prompt3":6,
+        "answer3":"Hold me!"
+    }
+
+    POST http://localhost:8080/application
+    content-type: application/json
+
+    {
+        "candidateID":2,
+        "jobID":4,
+        "prompt1":2,
+        "answer1":"Darkness is in my veins",
+        "prompt2":4,
+        "answer2":"I live in the shadows",
+        "prompt3":5,
+        "answer3":"I am the night"
+    }
+
+    POST http://localhost:8080/application
+    content-type: application/json
+
+    {
+        "candidateID":1,
+        "jobID":1,
+        "prompt1":1,
+        "answer1":"This role brings out the colour in my eyes",
+        "prompt2":2,
+        "answer2":"My ability is far beyond anyone in this company, you would be grateful that I even allow you in my presence",
+        "prompt3":3,
+        "answer3":"I treat all humans with respect, too bad all I see around here are pigs grovelling in the mud"
+    }
+
   */
 
   client.release();
