@@ -173,8 +173,15 @@ exports.isValidApplication = function isValidApplication(applicationDetails) {
 exports.isValidCandidateUpdate = function isValidCandidateUpdate(
   updatedDetails
 ) {
-  const { candidateEmail, candidatePassword, candidatePasswordConfirmation } =
-    updatedDetails;
+  const {
+    candidateEmail,
+    candidatePassword,
+    candidatePasswordConfirmation,
+    candidateName,
+    headline,
+    candidatePhoneNumber,
+    yearsInIndustryID,
+  } = updatedDetails;
   if (candidatePassword.length > 1 || candidatePasswordConfirmation > 1) {
     const validUpdateResponse = isValidAccountDetails(
       candidateEmail,
@@ -206,6 +213,54 @@ exports.isValidCandidateUpdate = function isValidCandidateUpdate(
   }
   if (yearsInIndustryID > 5 || yearsInIndustryID < 1) {
     return "Years in industry is out of range!";
+  }
+  return true;
+};
+
+exports.isValidCompanyUpdate = function isValidCompanyUpdate(updatedDetails) {
+  const {
+    companyEmail,
+    companyPassword,
+    companyPasswordConfirmation,
+    companyName,
+    companyBio,
+    numberOfEmployeesID,
+    femalePercentage,
+    retentionRate,
+    imageURL,
+  } = updatedDetails;
+
+  if (companyPassword.length > 1 || companyPasswordConfirmation > 1) {
+    const validUpdateResponse = isValidAccountDetails(
+      companyEmail,
+      companyPassword,
+      companyPasswordConfirmation
+    );
+    if (validUpdateResponse !== true) {
+      return validUpdateResponse;
+    }
+  } else {
+    if (!isValidEmail(companyEmail)) {
+      return "Email isn't a valid email!";
+    }
+  }
+  if (companyName.length < 1) {
+    return "No Company name inserted";
+  }
+  if (companyBio.length < 1) {
+    return "No Company bio inserted";
+  }
+  if (numberOfEmployeesID === undefined || numberOfEmployeesID === null) {
+    return "Number of employees not specified";
+  }
+  if (femalePercentage === undefined || femalePercentage === null) {
+    return "Female percentage not specified";
+  }
+  if (retentionRate === undefined || retentionRate === null) {
+    return "Retention rate not specified";
+  }
+  if (imageURL.length < 1) {
+    return "Image URL not specified";
   }
   return true;
 };

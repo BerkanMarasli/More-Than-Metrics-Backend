@@ -4,6 +4,7 @@ const {
   isValidJobDetails,
   isValidApplication,
   isValidCandidateUpdate,
+  isValidCompanyUpdate,
 } = require("./server-validation.js");
 const { Pool } = require("pg");
 const express = require("express");
@@ -432,9 +433,9 @@ app.put("/candidate/update", async (req, res) => {
     return res.status(400).send("Email address already taken!");
   }
   // Validating candidate details
-  const validCandidateResponse = isValidCandidate(updatedDetails);
-  if (validCandidateResponse !== true) {
-    return res.status(400).send(validCandidateResponse);
+  const validUpdateResponse = isValidCandidateUpdate(updatedDetails);
+  if (validUpdateResponse !== true) {
+    return res.status(400).send(validUpdateResponse);
   }
   // Updating account for candidate
   const updateResponse = await updateAccount(
@@ -442,10 +443,10 @@ app.put("/candidate/update", async (req, res) => {
     candidateEmail,
     candidatePassword
   );
-  if (updateResponse === false) {
-    return res.status(500).send("unable to update account");
+  if (updateResponse !== true) {
+    return res.status(500).send(updateResponse);
   }
-  // Inserting (additional) details for candidate
+  // Updating (additional) details for candidate
   const client = await moreThanMetricsDB.connect();
   const updateCandidateDetails =
     "UPDATE candidates SET candidate_name = $1, headline = $2, candidate_phone_number = $3, candidate_years_in_industry_id = $4 WHERE account_id = $5";
@@ -526,6 +527,62 @@ app.post("/company/register", async (req, res) => {
   client.release();
 });
 
+app.put("/company/update", async (req, res) => {
+  const updatedDetails = req.body;
+  const {
+    accountID,
+    companyEmail,
+    companyPassword,
+    companyName,
+    companyBio,
+    companyLocation,
+    numberOfEmployeesID,
+    femalePercentage,
+    retentionRate,
+    imageURL,
+  } = updatedDetails;
+  // Checks for duplicate email
+  if (await isUpdatedEmailTaken(companyEmail, accountID)) {
+    return res.status(400).send("Email address already taken!");
+  }
+  // Validating company details
+  const validUpdateResponse = isValidCompanyUpdate(updatedDetails);
+  if (validUpdateResponse !== true) {
+    return res.status(400).send(validUpdateResponse);
+  }
+  // Updating account for company
+  const updateResponse = await updateAccount(
+    accountID,
+    companyEmail,
+    companyPassword
+  );
+  if (updateResponse !== true) {
+    return res.status(500).send(updateResponse);
+  }
+  // Updating (additional) details for company
+  const client = await moreThanMetricsDB.connect();
+  const updateCandidateDetails =
+    "UPDATE companies SET company_name = $1, company_bio = $2, location = $3, company_number_of_employees_id = $4, company_female_employee_percentage = $5, company_retention_rate = $6 , image_url = $7 WHERE account_id = $8;";
+  client
+    .query(updateCandidateDetails, [
+      companyName,
+      companyBio,
+      companyLocation,
+      numberOfEmployeesID,
+      femalePercentage,
+      retentionRate,
+      imageURL,
+      accountID,
+    ])
+    .then(() => {
+      res.status(200).send("Updated company details!");
+    })
+    .catch((error) => {
+      res.status(500).send(error);
+    });
+  client.release();
+});
+
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
   const client = await moreThanMetricsDB.connect();
@@ -591,14 +648,12 @@ async function updateAccount(accountID, email, password) {
     "UPDATE accounts SET account_email = $1, account_hashed_password = $2 WHERE account_id = $3";
   await client
     .query(updateQuery, [email, hashedPassword, accountID])
-    .then(() => {
-      client.release();
-      return true;
-    })
     .catch((error) => {
       client.release();
-      return false;
+      return error;
     });
+  client.release();
+  return true;
 }
 
 async function insertNewAccount(email, password, accountType) {
