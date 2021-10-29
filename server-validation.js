@@ -57,6 +57,7 @@ exports.isValidCandidate = function isValidCandidate(candidateDetails) {
     headline,
     candidatePhoneNumber,
     yearsInIndustryID,
+    technologies,
   } = candidateDetails;
 
   const validAccountResponse = isValidAccountDetails(
@@ -85,6 +86,9 @@ exports.isValidCandidate = function isValidCandidate(candidateDetails) {
   }
   if (yearsInIndustryID > 5 || yearsInIndustryID < 1) {
     return "Years in industry is out of range!";
+  }
+  if (technologies.length < 1) {
+    return "No technologies selected";
   }
   return true;
 };

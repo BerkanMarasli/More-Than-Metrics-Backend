@@ -409,6 +409,7 @@ app.post("/candidate/register", async (req, res) => {
     headline,
     candidatePhoneNumber,
     yearsInIndustryID,
+    technologies,
   } = candidateDetails;
   // Checks for duplicate email
   if (await isEmailTaken(candidateEmail)) {
@@ -436,8 +437,8 @@ app.post("/candidate/register", async (req, res) => {
   );
   const accountID = accountIDQuery.rows[0].account_id;
   const insertCandidateDetails =
-    "INSERT INTO candidates (candidate_name, headline, candidate_phone_number, candidate_years_in_industry_id, account_id) VALUES ($1, $2, $3, $4, $5)";
-  await client
+    "INSERT INTO candidates (candidate_name, headline, candidate_phone_number, candidate_years_in_industry_id, account_id) VALUES ($1, $2, $3, $4, $5) RETURNING candidate_id";
+  const queryResult = await client
     .query(insertCandidateDetails, [
       candidateName,
       headline,
@@ -445,12 +446,23 @@ app.post("/candidate/register", async (req, res) => {
       yearsInIndustryID,
       accountID,
     ])
-    .then(() => {
-      res.status(200).send("Added new candidate details!");
-    })
     .catch((error) => {
+      client.release();
       res.status(500).send(error);
     });
+  const candidateID = queryResult.rows[0].candidate_id;
+  technologies.forEach((technology) => {
+    client
+      .query(
+        "INSERT INTO candidates_technologies(candidate_id, technology_id) VALUES ($1, $2);",
+        [candidateID, technology.technology_id]
+      )
+      .catch((error) => {
+        client.release();
+        return res.status(500).send(error);
+      });
+  });
+  res.status(200).send("Added candidate details");
   client.release();
 });
 
@@ -668,6 +680,7 @@ async function isEmailTaken(email) {
   }
   return false;
 }
+
 async function isUpdatedEmailTaken(accountID, email) {
   const client = await moreThanMetricsDB.connect();
   const emailQuery = await client.query(
