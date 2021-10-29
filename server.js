@@ -415,59 +415,7 @@ app.post("/candidate/register", async (req, res) => {
   client.release();
 });
 
-app.patch("/candidate/update", async (req, res) => {
-  const candidateDetails = req.body;
-  const {
-    candidateEmail,
-    candidatePassword,
-    candidateName,
-    headline,
-    candidatePhoneNumber,
-    yearsInIndustryID,
-  } = candidateDetails;
-  // Checks for duplicate email
-  if (await isEmailTaken(candidateEmail)) {
-    return res.status(400).send("Email address already taken!");
-  }
-  // Validating candidate details
-  const validCandidateResponse = isValidCandidate(candidateDetails);
-  if (validCandidateResponse !== true) {
-    return res.status(400).send(validCandidateResponse);
-  }
-  // Creating new account for candidate
-  const newAccountResponse = await insertNewAccount(
-    candidateEmail,
-    candidatePassword,
-    1
-  );
-  if (newAccountResponse !== "Registered new account!") {
-    return res.status(500).send(newAccountResponse);
-  }
-  // Inserting (additional) details for candidate
-  const client = await moreThanMetricsDB.connect();
-  const accountIDQuery = await client.query(
-    "SELECT account_id FROM accounts WHERE account_email = $1",
-    [candidateEmail]
-  );
-  const accountID = accountIDQuery.rows[0].account_id;
-  const insertCandidateDetails =
-    "INSERT INTO candidates (candidate_name, headline, candidate_phone_number, candidate_years_in_industry_id, account_id) VALUES ($1, $2, $3, $4, $5)";
-  await client
-    .query(insertCandidateDetails, [
-      candidateName,
-      headline,
-      candidatePhoneNumber,
-      yearsInIndustryID,
-      accountID,
-    ])
-    .then(() => {
-      res.status(200).send("Added new candidate details!");
-    })
-    .catch((error) => {
-      res.status(500).send(error);
-    });
-  client.release();
-});
+app.patch("/candidate/update", async (req, res) => {});
 
 app.post("/company/register", async (req, res) => {
   const companyDetails = req.body;
