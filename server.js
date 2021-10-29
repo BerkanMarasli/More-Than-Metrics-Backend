@@ -84,6 +84,7 @@ app.get("/prompts", async (req, res) => {
   client.release();
 });
 
+//for candidate
 app.get("/company/:companyName", async (req, res) => {
   const client = await moreThanMetricsDB.connect();
   const companyName = req.params.companyName;
@@ -99,6 +100,7 @@ app.get("/company/:companyName", async (req, res) => {
   client.release();
 });
 
+//for candidate
 app.get("/jobs/company/:companyName", async (req, res) => {
   const client = await moreThanMetricsDB.connect();
   const companyName = req.params.companyName.replaceAll("%20", "");
@@ -114,6 +116,7 @@ app.get("/jobs/company/:companyName", async (req, res) => {
   client.release();
 });
 
+//for candidate
 app.get("/jobs/:search?", async (req, res) => {
   const client = await moreThanMetricsDB.connect();
   let search = req.params.search;
@@ -145,6 +148,7 @@ app.get("/jobs/:search?", async (req, res) => {
   }
 });
 
+//for candidate
 app.get("/job/:jobID", async (req, res) => {
   const client = await moreThanMetricsDB.connect();
   let jobID = req.params.jobID;
@@ -176,6 +180,7 @@ app.get("/job/:jobID", async (req, res) => {
   client.release();
 });
 
+//for Company
 app.post("/jobs", async (req, res) => {
   const jobDetails = req.body;
   const {
@@ -229,6 +234,7 @@ app.post("/jobs", async (req, res) => {
   client.release();
 });
 
+//for candidate
 app.get("/applications/candidate/:candidateID", async (req, res) => {
   const client = await moreThanMetricsDB.connect();
   const candidateID = req.params.candidateID;
@@ -246,6 +252,20 @@ app.get("/applications/candidate/:candidateID", async (req, res) => {
   client.release();
 });
 
+//for Company
+app.get("/company/stats/:companyID", async (req, res) => {
+  const companyID = req.params.companyID;
+  const getNoOfApplications =
+    "SELECT COUNT(application_id) FROM application_status JOIN jobs ON application_status.job_id = jobs.job_id JOIN companies ON jobs.company_id = companies.company_id WHERE jobs.company_id = $1";
+  const client = await moreThanMetricsDB.connect();
+  const queryResult = await client.query(getNoOfApplications, [companyID]);
+  const noOfApplications = queryResult.rows[0].count;
+  client.release();
+  res.status(200).send(noOfApplications);
+  return noOfApplications;
+});
+
+//for Company
 app.get("/applications/review/:jobID", async (req, res) => {
   const client = await moreThanMetricsDB.connect();
   const jobID = req.params.jobID;
@@ -282,6 +302,7 @@ app.get("/applications/review/:jobID", async (req, res) => {
   client.release();
 });
 
+//for Company
 app.patch("/applications/assess", async (req, res) => {
   const { accepted, applicationID } = req.body;
   if (typeof accepted !== "boolean") {
@@ -301,6 +322,7 @@ app.patch("/applications/assess", async (req, res) => {
   client.release();
 });
 
+//for Company
 app.get("/applications/accepted/:jobID", async (req, res) => {
   const client = await moreThanMetricsDB.connect();
   const jobID = req.params.jobID;
@@ -316,6 +338,7 @@ app.get("/applications/accepted/:jobID", async (req, res) => {
   client.release();
 });
 
+//for candidate
 app.post("/application", async (req, res) => {
   const applicationDetails = req.body;
   const {
@@ -363,6 +386,7 @@ app.post("/application", async (req, res) => {
   client.release();
 });
 
+//for candidate
 app.post("/candidate/register", async (req, res) => {
   const candidateDetails = req.body;
   const {
@@ -417,6 +441,7 @@ app.post("/candidate/register", async (req, res) => {
   client.release();
 });
 
+//for candidate
 app.put("/candidate/update", async (req, res) => {
   const updatedDetails = req.body;
   const {
@@ -467,6 +492,7 @@ app.put("/candidate/update", async (req, res) => {
   client.release();
 });
 
+//for Company
 app.post("/company/register", async (req, res) => {
   const companyDetails = req.body;
   const {
@@ -527,6 +553,7 @@ app.post("/company/register", async (req, res) => {
   client.release();
 });
 
+//for Company
 app.put("/company/update", async (req, res) => {
   const updatedDetails = req.body;
   const {
@@ -583,6 +610,7 @@ app.put("/company/update", async (req, res) => {
   client.release();
 });
 
+//for Both
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
   const client = await moreThanMetricsDB.connect();
