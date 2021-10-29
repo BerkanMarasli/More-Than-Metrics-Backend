@@ -266,6 +266,19 @@ app.get("/company/stats/:companyID", async (req, res) => {
 });
 
 //for Company
+app.get("/job/stats/:jobID", async (req, res) => {
+  const jobID = req.params.jobID;
+  const getNoOfApplications =
+    "SELECT COUNT(application_id) FROM application_status WHERE job_id = $1";
+  const client = await moreThanMetricsDB.connect();
+  const queryResult = await client.query(getNoOfApplications, [jobID]);
+  const noOfApplications = queryResult.rows[0].count;
+  client.release();
+  res.status(200).send(noOfApplications);
+  return noOfApplications;
+});
+
+//for Company
 app.get("/applications/review/:jobID", async (req, res) => {
   const client = await moreThanMetricsDB.connect();
   const jobID = req.params.jobID;
