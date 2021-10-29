@@ -170,6 +170,46 @@ exports.isValidApplication = function isValidApplication(applicationDetails) {
   return true;
 };
 
+exports.isValidCandidateUpdate = function isValidCandidateUpdate(
+  updatedDetails
+) {
+  const { candidateEmail, candidatePassword, candidatePasswordConfirmation } =
+    updatedDetails;
+  if (candidatePassword.length > 1 || candidatePasswordConfirmation > 1) {
+    const validUpdateResponse = isValidAccountDetails(
+      candidateEmail,
+      candidatePassword,
+      candidatePasswordConfirmation
+    );
+    if (validUpdateResponse !== true) {
+      return validUpdateResponse;
+    }
+  } else {
+    if (!isValidEmail(candidateEmail)) {
+      return "Email isn't a valid email!";
+    }
+  }
+  if (candidateName.length < 1) {
+    return "Candidate name not specified!";
+  }
+  if (headline.length < 1) {
+    return "Headline not specified!";
+  }
+  if (
+    candidatePhoneNumber.toString().length !== 12 ||
+    typeof candidatePhoneNumber !== "number"
+  ) {
+    return "Candidate phone number not valid!";
+  }
+  if (yearsInIndustryID === undefined || yearsInIndustryID === null) {
+    return "Years in industry not specified!";
+  }
+  if (yearsInIndustryID > 5 || yearsInIndustryID < 1) {
+    return "Years in industry is out of range!";
+  }
+  return true;
+};
+
 function isValidAccountDetails(email, password, confirmation) {
   if (!isValidEmail(email)) {
     return "Email isn't a valid email!";

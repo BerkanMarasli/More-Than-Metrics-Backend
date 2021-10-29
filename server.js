@@ -3,6 +3,7 @@ const {
   isValidCandidate,
   isValidJobDetails,
   isValidApplication,
+  isValidCandidateUpdate,
 } = require("./server-validation.js");
 const { Pool } = require("pg");
 const express = require("express");
@@ -415,7 +416,55 @@ app.post("/candidate/register", async (req, res) => {
   client.release();
 });
 
-app.patch("/candidate/update", async (req, res) => {});
+app.put("/candidate/update", async (req, res) => {
+  const updatedDetails = req.body;
+  const {
+    accountID,
+    candidateEmail,
+    candidatePassword,
+    candidateName,
+    headline,
+    candidatePhoneNumber,
+    yearsInIndustryID,
+  } = updatedDetails;
+  // Checks for duplicate email
+  if (await isUpdatedEmailTaken(candidateEmail, accountID)) {
+    return res.status(400).send("Email address already taken!");
+  }
+  // Validating candidate details
+  const validCandidateResponse = isValidCandidate(updatedDetails);
+  if (validCandidateResponse !== true) {
+    return res.status(400).send(validCandidateResponse);
+  }
+  // Updating account for candidate
+  const updateResponse = await updateAccount(
+    accountID,
+    candidateEmail,
+    candidatePassword
+  );
+  if (updateResponse === false) {
+    return res.status(500).send("unable to update account");
+  }
+  // Inserting (additional) details for candidate
+  const client = await moreThanMetricsDB.connect();
+  const updateCandidateDetails =
+    "UPDATE candidates SET candidate_name = $1, headline = $2, candidate_phone_number = $3, candidate_years_in_industry_id = $4 WHERE account_id = $5";
+  client
+    .query(updateCandidateDetails, [
+      candidateName,
+      headline,
+      candidatePhoneNumber,
+      yearsInIndustryID,
+      accountID,
+    ])
+    .then(() => {
+      res.status(200).send("Updated candidate details!");
+    })
+    .catch((error) => {
+      res.status(500).send(error);
+    });
+  client.release();
+});
 
 app.post("/company/register", async (req, res) => {
   const companyDetails = req.body;
@@ -486,19 +535,20 @@ app.post("/login", async (req, res) => {
     .query(getAccountLoginInfo, [email])
     .then(async (queryResult) => {
       const [accountInfo] = queryResult.rows;
-      if (accountInfo.length === 0) {
+      if (!queryResult.rowCount && !(await isEmailTaken(email))) {
         client.release();
-        return res.status(400).send("Account does not exist!");
+        return res.status(400).send({ message: "Account does not exist!" });
       }
       const hashedPassword = accountInfo.account_hashed_password;
       const isPasswordCorrect = await bcrypt.compare(password, hashedPassword);
       if (isPasswordCorrect) {
-        res.status(200).send("Successfully logged in!");
+        res.status(200).send({ message: "Successfully logged in!" });
       } else {
-        res.status(400).send("Password is invalid!");
+        res.status(400).send({ message: "Password is invalid!" });
       }
     })
     .catch((error) => {
+      console.log(error);
       res.status(500).send({ error });
     });
   client.release();
@@ -519,6 +569,36 @@ async function isEmailTaken(email) {
     return true;
   }
   return false;
+}
+async function isUpdatedEmailTaken(accountID, email) {
+  const client = await moreThanMetricsDB.connect();
+  const emailQuery = await client.query(
+    "SELECT account_email FROM accounts WHERE account_email = $1 AND account_email != $2",
+    [email, accountID]
+  );
+  client.release();
+  if (emailQuery.rows.length >= 1) {
+    return true;
+  }
+  return false;
+}
+
+async function updateAccount(accountID, email, password) {
+  const salt = await bcrypt.genSalt();
+  const hashedPassword = await bcrypt.hash(password, salt);
+  const client = await moreThanMetricsDB.connect();
+  const updateQuery =
+    "UPDATE accounts SET account_email = $1, account_hashed_password = $2 WHERE account_id = $3";
+  await client
+    .query(updateQuery, [email, hashedPassword, accountID])
+    .then(() => {
+      client.release();
+      return true;
+    })
+    .catch((error) => {
+      client.release();
+      return false;
+    });
 }
 
 async function insertNewAccount(email, password, accountType) {
