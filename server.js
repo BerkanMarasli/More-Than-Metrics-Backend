@@ -637,8 +637,8 @@ app.put("/company/update", async (req, res) => {
 
 //for Both
 app.post("/login", async (req, res) => {
-  const { email, password } = req.body;
-  const client = await moreThanMetricsDB.connect();
+  const { email, password } = req.body
+  const client = await moreThanMetricsDB.connect()
   const getAccountLoginInfo =
     "SELECT account_email, account_hashed_password FROM accounts WHERE account_email = $1";
   client
@@ -652,17 +652,16 @@ app.post("/login", async (req, res) => {
       const hashedPassword = accountInfo.account_hashed_password;
       const isPasswordCorrect = await bcrypt.compare(password, hashedPassword);
       if (isPasswordCorrect) {
-        res.status(200).send({ message: "Successfully logged in!" });
+        res.status(200).send({ message: "Successfully logged in!" })
       } else {
-        res.status(400).send({ message: "Password is invalid!" });
+        res.status(400).send({ message: "Password is invalid!" })
       }
     })
-    .catch((error) => {
-      console.log(error);
-      res.status(500).send({ error });
-    });
-  client.release();
-});
+    .catch(error => {
+      res.status(500).send({ message: error })
+    })
+  client.release()
+})
 
 app.listen(PORT, () => {
   console.log(`Server started!`);
