@@ -57,6 +57,7 @@ exports.isValidCandidate = function isValidCandidate(candidateDetails) {
     headline,
     candidatePhoneNumber,
     yearsInIndustryID,
+    technologies,
   } = candidateDetails;
 
   const validAccountResponse = isValidAccountDetails(
@@ -85,6 +86,9 @@ exports.isValidCandidate = function isValidCandidate(candidateDetails) {
   }
   if (yearsInIndustryID > 5 || yearsInIndustryID < 1) {
     return "Years in industry is out of range!";
+  }
+  if (technologies.length < 1) {
+    return "No technologies selected";
   }
   return true;
 };
@@ -166,6 +170,101 @@ exports.isValidApplication = function isValidApplication(applicationDetails) {
   }
   if (answer3.length < 1) {
     return "No answer for question 3";
+  }
+  return true;
+};
+
+exports.isValidCandidateUpdate = function isValidCandidateUpdate(
+  updatedDetails
+) {
+  const {
+    candidateEmail,
+    candidatePassword,
+    candidatePasswordConfirmation,
+    candidateName,
+    headline,
+    candidatePhoneNumber,
+    yearsInIndustryID,
+  } = updatedDetails;
+  if (candidatePassword.length > 1 || candidatePasswordConfirmation > 1) {
+    const validUpdateResponse = isValidAccountDetails(
+      candidateEmail,
+      candidatePassword,
+      candidatePasswordConfirmation
+    );
+    if (validUpdateResponse !== true) {
+      return validUpdateResponse;
+    }
+  } else {
+    if (!isValidEmail(candidateEmail)) {
+      return "Email isn't a valid email!";
+    }
+  }
+  if (candidateName.length < 1) {
+    return "Candidate name not specified!";
+  }
+  if (headline.length < 1) {
+    return "Headline not specified!";
+  }
+  if (
+    candidatePhoneNumber.toString().length !== 12 ||
+    typeof candidatePhoneNumber !== "number"
+  ) {
+    return "Candidate phone number not valid!";
+  }
+  if (yearsInIndustryID === undefined || yearsInIndustryID === null) {
+    return "Years in industry not specified!";
+  }
+  if (yearsInIndustryID > 5 || yearsInIndustryID < 1) {
+    return "Years in industry is out of range!";
+  }
+  return true;
+};
+
+exports.isValidCompanyUpdate = function isValidCompanyUpdate(updatedDetails) {
+  const {
+    companyEmail,
+    companyPassword,
+    companyPasswordConfirmation,
+    companyName,
+    companyBio,
+    numberOfEmployeesID,
+    femalePercentage,
+    retentionRate,
+    imageURL,
+  } = updatedDetails;
+
+  if (companyPassword.length > 1 || companyPasswordConfirmation > 1) {
+    const validUpdateResponse = isValidAccountDetails(
+      companyEmail,
+      companyPassword,
+      companyPasswordConfirmation
+    );
+    if (validUpdateResponse !== true) {
+      return validUpdateResponse;
+    }
+  } else {
+    if (!isValidEmail(companyEmail)) {
+      return "Email isn't a valid email!";
+    }
+  }
+  if (companyName.length < 1) {
+    return "No Company name inserted";
+  }
+  if (companyBio.length < 1) {
+    return "No Company bio inserted";
+  }
+  if (numberOfEmployeesID === undefined || numberOfEmployeesID === null) {
+    return "Number of employees not specified";
+  }
+  if (femalePercentage === undefined || femalePercentage === null) {
+    return "Female percentage not specified";
+  }
+  if (retentionRate === undefined || retentionRate === null) {
+    return "Retention rate not specified";
+  }
+  if (imageURL.length < 1) {
+    return "Image URL not specified";
   }
   return true;
 };
