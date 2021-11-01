@@ -5,31 +5,37 @@ const {
     isValidApplication,
     isValidCandidateUpdate,
     isValidCompanyUpdate,
-} = require("./server-validation.js")
+} = require("./server-logic/server-validation.js")
+const { isEmailTaken, isUpdatedEmailTaken, updateAccount, insertNewAccount } = require("./server-logic/server-logic")
 const { Pool } = require("pg")
 const express = require("express")
 const bcrypt = require("bcryptjs")
 const cors = require("cors")
+const cookieParser = require("cookie-parser")
 // const { v4: uuidv4 } = require("uuid");
 
 const DBSTRING = "postgres://hjtqvwqx:i-lgggJgY-howhBMFWrhsLpMOel53sxn@surus.db.elephantsql.com/hjtqvwqx"
 
 const moreThanMetricsDB = new Pool({ connectionString: DBSTRING })
+exports.moreThanMetricsDB = moreThanMetricsDB
 const PORT = 8080
-// const whitelist = ["http://localhost:3000"]
+// const whitelist = ["http://localhost:3000", "http://localhost:8080", "localhost:3000", "localhost:8080"]
 // const corsOptions = {
-//   credentials: true, // This is important.
-//   origin: (origin, callback) => {
-//     if (whitelist.includes(origin)) return callback(null, true)
+//     credentials: true, // This is important.
+//     origin: (origin, callback) => {
+//         if (whitelist.includes(origin)) return callback(null, true)
 
-//     callback(new Error("Not allowed by CORS"))
-//   },
+//         callback(new Error("Not allowed by CORS"))
+//     },
+//     optionsSuccessStatus: 200,
 // }
 
 const app = express()
 app.use(express.json())
 // app.use(cors(corsOptions))
-app.use(cors())
+app.use(cors({ credentials: true, origin: "http://localhost:3000" }))
+// app.use(cors())
+app.use(cookieParser())
 
 app.get("/number_of_employees", async (req, res) => {
     const client = await moreThanMetricsDB.connect()
@@ -252,7 +258,7 @@ app.get("/applications/review/:jobID", async (req, res) => {
     const client = await moreThanMetricsDB.connect()
     const jobID = req.params.jobID
     const getApplications =
-        "SELECT application_id, application_status.candidate_id, headline FROM application_status  JOIN candidates ON candidates.candidate_id = application_status.candidate_id WHERE job_id = $1 AND reviewed = false"
+        "SELECT application_id, application_status.candidate_id, headline, years_in_industry.category FROM application_status JOIN candidates ON candidates.candidate_id = application_status.candidate_id JOIN years_in_industry ON candidates.candidate_years_in_industry_id = years_in_industry_id WHERE job_id = $1 AND reviewed = false"
     const queryResult = await client.query(getApplications, [jobID])
     const applicants = queryResult.rows
     if (applicants.length < 1) {
@@ -265,17 +271,24 @@ app.get("/applications/review/:jobID", async (req, res) => {
             const responsesQuery = await client.query(getResponses, [applicants[i].application_id])
             const responses = responsesQuery.rows
             for (let j = 0; j < responses.length; j++) {
-                console.log(responses[j])
                 const promptKey = "prompt" + (j + 1)
                 const answerKey = "answer" + (j + 1)
-                console.log(promptKey)
-                console.log(answerKey)
                 applicants[i] = {
                     ...applicants[i],
                     [promptKey]: responses[j].prompt,
                     [answerKey]: responses[j].answer,
                 }
             }
+            console.log("applicant " + applicants[i].candidate_id)
+            const getTechnologies =
+                "SELECT * FROM candidates_technologies JOIN technologies ON technologies.technology_id = candidates_technologies.technology_id WHERE candidate_id = $1"
+            const techArray = []
+            const techQuery = await client.query(getTechnologies, [applicants[i].candidate_id])
+            techQuery.rows.forEach((technology) => {
+                techArray.push(technology.technology_name)
+            })
+            console.log(techArray)
+            applicants[i]["technologies"] = techArray
         }
         res.status(200).send(applicants)
     }
@@ -358,6 +371,14 @@ app.get("/candidate/information/:candidateID", async (req, res) => {
         client.release()
         return res.status(500).send("No candidate found")
     }
+    const getCandidateTechnologies =
+        "SELECT * FROM candidates_technologies JOIN technologies ON technologies.technology_id = candidates_technologies.technology_id WHERE candidate_id = $1"
+    const techArray = []
+    const techQuery = await client.query(getCandidateTechnologies, [candidateID])
+    techQuery.rows.forEach((technology) => {
+        techArray.push(technology.technology_name)
+    })
+    candidateInfo[0]["technologies"] = techArray
     res.status(200).send(candidateInfo)
     client.release()
 })
@@ -367,7 +388,7 @@ app.post("/candidate/register", async (req, res) => {
     const candidateDetails = req.body
     const { candidateEmail, candidatePassword, candidateName, headline, candidatePhoneNumber, yearsInIndustryID, technologies } = candidateDetails
     // Checks for duplicate email
-    if (await isEmailTaken(candidateEmail)) {
+    if (await isEmailTaken(candidateEmail, moreThanMetricsDB)) {
         return res.status(400).send("Email address already taken!")
     }
     // Validating candidate details
@@ -376,7 +397,7 @@ app.post("/candidate/register", async (req, res) => {
         return res.status(400).send(validCandidateResponse)
     }
     // Creating new account for candidate
-    const newAccountResponse = await insertNewAccount(candidateEmail, candidatePassword, 1)
+    const newAccountResponse = await insertNewAccount(candidateEmail, candidatePassword, 1, moreThanMetricsDB)
     if (newAccountResponse !== "Registered new account!") {
         return res.status(500).send(newAccountResponse)
     }
@@ -390,17 +411,19 @@ app.post("/candidate/register", async (req, res) => {
         .query(insertCandidateDetails, [candidateName, headline, candidatePhoneNumber, yearsInIndustryID, accountID])
         .catch((error) => {
             client.release()
-            res.status(500).send(error)
+            return res.status(500).send(error)
         })
     const candidateID = queryResult.rows[0].candidate_id
-    technologies.forEach((technology) => {
+    console.log(candidateID)
+    console.log(technologies)
+    for (let technology of technologies) {
         client
-            .query("INSERT INTO candidates_technologies(candidate_id, technology_id) VALUES ($1, $2);", [candidateID, technology.technology_id])
+            .query("INSERT INTO candidates_technologies(candidate_id, technology_id) VALUES ($1, $2);", [candidateID, technology])
             .catch((error) => {
                 client.release()
                 return res.status(500).send(error)
             })
-    })
+    }
     res.status(200).send("Added candidate details")
     client.release()
 })
@@ -410,7 +433,7 @@ app.put("/candidate/update", async (req, res) => {
     const updatedDetails = req.body
     const { accountID, candidateEmail, candidatePassword, candidateName, headline, candidatePhoneNumber, yearsInIndustryID } = updatedDetails
     // Checks for duplicate email
-    if (await isUpdatedEmailTaken(candidateEmail, accountID)) {
+    if (await isUpdatedEmailTaken(candidateEmail, accountID, moreThanMetricsDB)) {
         return res.status(400).send("Email address already taken!")
     }
     // Validating candidate details
@@ -419,7 +442,7 @@ app.put("/candidate/update", async (req, res) => {
         return res.status(400).send(validUpdateResponse)
     }
     // Updating account for candidate
-    const updateResponse = await updateAccount(accountID, candidateEmail, candidatePassword)
+    const updateResponse = await updateAccount(accountID, candidateEmail, candidatePassword, moreThanMetricsDB)
     if (updateResponse !== true) {
         return res.status(500).send(updateResponse)
     }
@@ -469,7 +492,7 @@ app.post("/company/register", async (req, res) => {
         imageURL,
     } = companyDetails
     // Checks for duplicate email
-    if (await isEmailTaken(companyEmail)) {
+    if (await isEmailTaken(companyEmail, moreThanMetricsDB)) {
         return res.status(400).send("Email address already taken!")
     }
     // Validating candidate details
@@ -478,7 +501,7 @@ app.post("/company/register", async (req, res) => {
         return res.status(400).send(validCompanyResponse)
     }
     // Creating new account for company
-    const newAccountResponse = await insertNewAccount(companyEmail, companyPassword, 2)
+    const newAccountResponse = await insertNewAccount(companyEmail, companyPassword, 2, moreThanMetricsDB)
     if (newAccountResponse !== "Registered new account!") {
         return res.status(500).send(newAccountResponse)
     }
@@ -524,7 +547,7 @@ app.put("/company/update", async (req, res) => {
         imageURL,
     } = updatedDetails
     // Checks for duplicate email
-    if (await isUpdatedEmailTaken(companyEmail, accountID)) {
+    if (await isUpdatedEmailTaken(companyEmail, accountID, moreThanMetricsDB)) {
         return res.status(400).send("Email address already taken!")
     }
     // Validating company details
@@ -533,7 +556,7 @@ app.put("/company/update", async (req, res) => {
         return res.status(400).send(validUpdateResponse)
     }
     // Updating account for company
-    const updateResponse = await updateAccount(accountID, companyEmail, companyPassword)
+    const updateResponse = await updateAccount(accountID, companyEmail, companyPassword, moreThanMetricsDB)
     if (updateResponse !== true) {
         return res.status(500).send(updateResponse)
     }
@@ -566,19 +589,37 @@ app.post("/login", async (req, res) => {
     const { email, password } = req.body
     const client = await moreThanMetricsDB.connect()
     const getAccountLoginInfo =
-        "SELECT account_email, account_hashed_password, account_type_category FROM accounts JOIN account_type ON accounts.account_type_id = account_type.account_type_id WHERE account_email = $1"
+        "SELECT account_id, account_email, account_hashed_password, account_type_category FROM accounts JOIN account_type ON accounts.account_type_id = account_type.account_type_id WHERE account_email = $1"
     client
         .query(getAccountLoginInfo, [email])
         .then(async (queryResult) => {
             const [accountInfo] = queryResult.rows
-            if (!queryResult.rowCount && !(await isEmailTaken(email))) {
+            if (!queryResult.rowCount && !(await isEmailTaken(email, moreThanMetricsDB))) {
                 client.release()
                 return res.status(400).send({ message: "Account does not exist!" })
             }
             const hashedPassword = accountInfo.account_hashed_password
             const isPasswordCorrect = await bcrypt.compare(password, hashedPassword)
             if (isPasswordCorrect) {
-                res.status(200).send({ message: "Successfully logged in!", type: accountInfo.account_type_category })
+                let userID
+                let url
+                if (accountInfo.account_type_category === "company") {
+                    const getTypeID = await client.query("SELECT company_id FROM companies WHERE account_id = $1", [accountInfo.account_id])
+                    userID = getTypeID.rows[0].company_id
+                    url = "http://localhost:3000/dashboard"
+                } else {
+                    const getTypeID = await client.query("SELECT candidate_id FROM candidates WHERE account_id = $1", [accountInfo.account_id])
+                    userID = getTypeID.rows[0].candidate_id
+                    url = "http://localhost:3000/jobs"
+                }
+                res.status(200)
+                    .cookie("moreThanMetricsAT", accountInfo.account_type_category, {
+                        maxAge: 86000000,
+                    })
+                    .cookie("moreThanMetricsID", userID, {
+                        maxAge: 86000000,
+                    })
+                    .send({ message: "Successfully logged in!", type: accountInfo.account_type_category, userID: userID, url: url })
             } else {
                 res.status(400).send({ message: "Password is invalid!" })
             }
@@ -589,57 +630,62 @@ app.post("/login", async (req, res) => {
     client.release()
 })
 
+app.post("/logout", async (req, res) => {
+    const url = "http://localhost:3000"
+    res.status(200).clearCookie("moreThanMetricsAT").clearCookie("moreThanMetricsID").send({ message: "Successfully logged out!", url: url })
+})
+
 app.listen(PORT, () => {
     console.log(`Server started!`)
 })
 
-async function isEmailTaken(email) {
-    const client = await moreThanMetricsDB.connect()
-    const emailQuery = await client.query("SELECT account_email FROM accounts WHERE account_email = $1", [email])
-    client.release()
-    if (emailQuery.rows.length >= 1) {
-        return true
-    }
-    return false
-}
+// async function isEmailTaken(email) {
+//     const client = await moreThanMetricsDB.connect()
+//     const emailQuery = await client.query("SELECT account_email FROM accounts WHERE account_email = $1", [email])
+//     client.release()
+//     if (emailQuery.rows.length >= 1) {
+//         return true
+//     }
+//     return false
+// }
 
-async function isUpdatedEmailTaken(accountID, email) {
-    const client = await moreThanMetricsDB.connect()
-    const emailQuery = await client.query("SELECT account_email FROM accounts WHERE account_email = $1 AND account_email != $2", [email, accountID])
-    client.release()
-    if (emailQuery.rows.length >= 1) {
-        return true
-    }
-    return false
-}
+// async function isUpdatedEmailTaken(accountID, email) {
+//     const client = await moreThanMetricsDB.connect()
+//     const emailQuery = await client.query("SELECT account_email FROM accounts WHERE account_email = $1 AND account_email != $2", [email, accountID])
+//     client.release()
+//     if (emailQuery.rows.length >= 1) {
+//         return true
+//     }
+//     return false
+// }
 
-async function updateAccount(accountID, email, password) {
-    const salt = await bcrypt.genSalt()
-    const hashedPassword = await bcrypt.hash(password, salt)
-    const client = await moreThanMetricsDB.connect()
-    const updateQuery = "UPDATE accounts SET account_email = $1, account_hashed_password = $2 WHERE account_id = $3"
-    await client.query(updateQuery, [email, hashedPassword, accountID]).catch((error) => {
-        client.release()
-        return error
-    })
-    client.release()
-    return true
-}
+// async function updateAccount(accountID, email, password) {
+//     const salt = await bcrypt.genSalt()
+//     const hashedPassword = await bcrypt.hash(password, salt)
+//     const client = await moreThanMetricsDB.connect()
+//     const updateQuery = "UPDATE accounts SET account_email = $1, account_hashed_password = $2 WHERE account_id = $3"
+//     await client.query(updateQuery, [email, hashedPassword, accountID]).catch((error) => {
+//         client.release()
+//         return error
+//     })
+//     client.release()
+//     return true
+// }
 
-async function insertNewAccount(email, password, accountType) {
-    const salt = await bcrypt.genSalt()
-    const hashedPassword = await bcrypt.hash(password, salt)
-    const client = await moreThanMetricsDB.connect()
-    const insertAccount = "INSERT INTO accounts (account_email, account_hashed_password, account_type_id) VALUES ($1, $2, $3);"
-    let returnMessage = ""
-    await client
-        .query(insertAccount, [email, hashedPassword, accountType])
-        .then(() => {
-            returnMessage = "Registered new account!"
-        })
-        .catch((error) => {
-            returnMessage = error
-        })
-    client.release()
-    return returnMessage
-}
+// async function insertNewAccount(email, password, accountType) {
+//     const salt = await bcrypt.genSalt()
+//     const hashedPassword = await bcrypt.hash(password, salt)
+//     const client = await moreThanMetricsDB.connect()
+//     const insertAccount = "INSERT INTO accounts (account_email, account_hashed_password, account_type_id) VALUES ($1, $2, $3);"
+//     let returnMessage = ""
+//     await client
+//         .query(insertAccount, [email, hashedPassword, accountType])
+//         .then(() => {
+//             returnMessage = "Registered new account!"
+//         })
+//         .catch((error) => {
+//             returnMessage = error
+//         })
+//     client.release()
+//     return returnMessage
+// }
