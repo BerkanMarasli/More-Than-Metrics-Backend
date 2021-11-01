@@ -2,15 +2,32 @@ const {
     isValidCompany,
     isValidCandidate,
     isValidJobDetails,
-    isValidApplication,
     isValidCandidateUpdate,
     isValidCompanyUpdate,
 } = require("./server-logic/server-validation.js")
-const { isEmailTaken, isUpdatedEmailTaken, updateAccount, insertNewAccount } = require("./server-logic/server-logic")
+const {
+    isEmailTaken,
+    isUpdatedEmailTaken,
+    updateAccount,
+    insertNewAccount,
+    getNumberOfEmployees,
+    getYearsInIndustry,
+    getAllTechnologies,
+    getPrompts,
+} = require("./server-logic/server-logic.js")
 const { Pool } = require("pg")
 const express = require("express")
 const bcrypt = require("bcryptjs")
 const cors = require("cors")
+const {
+    getCompanyForCandidate,
+    getCompanyJobsForCandidate,
+    searchAllJobs,
+    getJobForCandidate,
+    getCandidatesApplications,
+    postNewApplication,
+    getCandidateProfile,
+} = require("./server-logic/candidate-logic.js")
 // const { v4: uuidv4 } = require("uuid");
 
 const DBSTRING = "postgres://hjtqvwqx:i-lgggJgY-howhBMFWrhsLpMOel53sxn@surus.db.elephantsql.com/hjtqvwqx"
@@ -35,150 +52,27 @@ app.use(express.json())
 app.use(cors())
 // app.options("*", cors())
 
-app.get("/number_of_employees", async (req, res) => {
-    const client = await moreThanMetricsDB.connect()
-    const getNOECategory = "SELECT * FROM number_of_employees"
-    const queryResult = await client.query(getNOECategory)
-    const NOECategories = queryResult.rows
-    if (NOECategories.length < 1) {
-        res.status(500).send("No categories for number of employees!")
-    } else {
-        res.status(200).send(NOECategories)
-    }
-    client.release()
-})
-
-app.get("/years_in_industry", async (req, res) => {
-    const client = await moreThanMetricsDB.connect()
-    const getYIICategory = "SELECT * FROM years_in_industry"
-    const queryResult = await client.query(getYIICategory)
-    const YIICategories = queryResult.rows
-    if (YIICategories.length < 1) {
-        res.status(500).send("No categories for years in industry!")
-    } else {
-        res.status(200).send(YIICategories)
-    }
-    client.release()
-})
-
-app.get("/technologies", async (req, res) => {
-    const client = await moreThanMetricsDB.connect()
-    const getTechnologyCategory = "Select * FROM technologies"
-    const queryResult = await client.query(getTechnologyCategory)
-    const technologyCategories = queryResult.rows
-    if (technologyCategories.length < 1) {
-        res.status(500).send("No categories for technologies!")
-    } else {
-        res.status(200).send(technologyCategories)
-    }
-    client.release()
-})
-
-app.get("/prompts", async (req, res) => {
-    const client = await moreThanMetricsDB.connect()
-    const getPromptCategory = "Select * FROM prompts"
-    const queryResult = await client.query(getPromptCategory)
-    const promptsCategories = queryResult.rows
-    if (promptsCategories.length < 1) {
-        res.status(500).send("No categories for prompts!")
-    } else {
-        res.status(200).send(promptsCategories)
-    }
-    client.release()
-})
+app.get("/number_of_employees", async (req, res) => getNumberOfEmployees(res, moreThanMetricsDB))
+app.get("/years_in_industry", async (req, res) => getYearsInIndustry(res, moreThanMetricsDB))
+app.get("/technologies", async (req, res) => getAllTechnologies(res, moreThanMetricsDB))
+app.get("/prompts", async (req, res) => getPrompts(res, moreThanMetricsDB))
 
 //for candidate
-app.get("/company/:companyName", async (req, res) => {
-    const client = await moreThanMetricsDB.connect()
-    const companyName = req.params.companyName
-    const getCompanyDetails =
-        "SELECT * FROM companies JOIN number_of_employees ON number_of_employees.number_of_employees_id = companies.company_number_of_employees_id WHERE company_name = $1"
-    const queryResult = client.query(getCompanyDetails, [companyName])
-    const companyDetails = (await queryResult).rows
-    if (companyDetails.length < 1) {
-        res.status(500).send("No company!")
-    } else {
-        res.status(200).send(companyDetails)
-    }
-    client.release()
-})
+app.get("/company/:companyName", async (req, res) => getCompanyForCandidate(req, res, moreThanMetricsDB))
 
 //for candidate
-app.get("/jobs/company/:companyName", async (req, res) => {
-    const client = await moreThanMetricsDB.connect()
-    const companyName = req.params.companyName.replaceAll("%20", "")
-    const getCompanyJobs = "SELECT * FROM jobs JOIN companies ON companies.company_id = jobs.company_id WHERE company_name = $1"
-    const queryResult = client.query(getCompanyJobs, [companyName])
-    const companyJobs = (await queryResult).rows
-    if (companyJobs.length < 1) {
-        res.status(500).send("No company jobs!")
-    } else {
-        res.status(200).send(companyJobs)
-    }
-    client.release()
-})
+app.get("/jobs/company/:companyName", async (req, res) => getCompanyJobsForCandidate(req, res, moreThanMetricsDB))
 
 //for candidate
-app.get("/jobs/:search?", async (req, res) => {
-    const client = await moreThanMetricsDB.connect()
-    let search = req.params.search
-    if (search === undefined) {
-        search = ""
-        const getAllJobs = "SELECT job_id, job_title, company_name FROM jobs JOIN companies ON companies.company_id = jobs.company_id ORDER BY job_id"
-        const queryResult = await client.query(getAllJobs)
-        const jobs = queryResult.rows
-        if (jobs.length < 1) {
-            res.status(400).send("No results")
-        } else {
-            res.status(200).send(jobs)
-        }
-        client.release()
-    } else {
-        const getJobs =
-            "SELECT job_id, job_title, company_name FROM jobs JOIN companies ON companies.company_id = jobs.company_id WHERE LOWER(job_title) LIKE $1 OR LOWER(company_name) LIKE $1 ORDER BY job_id"
-        const queryResult = await client.query(getJobs, ["%" + search.toLowerCase() + "%"])
-        const jobs = queryResult.rows
-        if (jobs.length < 1) {
-            res.status(400).send("No results")
-        } else {
-            res.status(200).send(jobs)
-        }
-        client.release()
-    }
-})
+app.get("/jobs/:search?", async (req, res) => searchAllJobs(req, res, moreThanMetricsDB))
 
 //for candidate
-app.get("/job/:jobID", async (req, res) => {
-    const client = await moreThanMetricsDB.connect()
-    let jobID = req.params.jobID
-    const getJobDetails = "SELECT * , jobs.location FROM jobs JOIN companies ON companies.company_id = jobs.company_id WHERE jobs.job_id = $1"
-    const queryResult = await client.query(getJobDetails, [jobID])
-    const jobDetails = queryResult.rows
-    if (jobDetails.length < 1) {
-        res.status(400).send("no such job")
-    } else {
-        const getResponsibilities = "SELECT responsibility FROM job_responsibilities WHERE job_id = $1"
-        const queryResp = await client.query(getResponsibilities, [jobID])
-        const respArray = []
-        queryResp.rows.forEach((input) => {
-            respArray.push(input.responsibility)
-        })
-        jobDetails[0]["responsibilities"] = respArray
-        const getTechnologies =
-            "SELECT technology_name FROM job_technologies JOIN technologies ON technologies.technology_id = job_technologies.technology_id WHERE job_id = $1"
-        const queryTech = await client.query(getTechnologies, [jobID])
-        techArray = []
-        queryTech.rows.forEach((input) => {
-            techArray.push(input.technology_name)
-        })
-        jobDetails[0]["technologies"] = techArray
-        res.status(200).send(jobDetails)
-    }
-    client.release()
-})
+app.get("/job/:jobID", async (req, res) => getJobForCandidate(req, res, moreThanMetricsDB))
 
 //for Company
-app.post("/jobs", async (req, res) => {
+app.post("/jobs", async (req, res) => postNewJob(req, res, moreThanMetricsDB))
+
+async function postNewJob(req, res, moreThanMetricsDB) {
     const jobDetails = req.body
     const { jobTitle, jobDesc, location, salary, keyResponsibilities, keyTechnologies, companyID } = jobDetails
     const validJobDetails = isValidJobDetails(jobDetails)
@@ -208,26 +102,15 @@ app.post("/jobs", async (req, res) => {
     })
     res.status(200).send("Added all job details")
     client.release()
-})
+}
 
 //for candidate
-app.get("/applications/candidate/:candidateID", async (req, res) => {
-    const client = await moreThanMetricsDB.connect()
-    const candidateID = req.params.candidateID
-    const getCandidateApplications =
-        "SELECT application_id, jobs.job_id, job_title, company_name, reviewed, accepted FROM application_status JOIN jobs ON jobs.job_id = application_status.job_id JOIN companies ON companies.company_id = jobs.company_id WHERE candidate_id = $1"
-    const queryResult = await client.query(getCandidateApplications, [candidateID])
-    const candidateApplications = queryResult.rows
-    if (candidateApplications.length < 1) {
-        res.status(200).send("No applications made")
-    } else {
-        res.status(200).send(candidateApplications)
-    }
-    client.release()
-})
+app.get("/applications/candidate/:candidateID", async (req, res) => getCandidatesApplications(req, res, moreThanMetricsDB))
 
 //for Company
-app.get("/company/stats/:companyID", async (req, res) => {
+app.get("/company/stats/:companyID", async (req, res) => getCompanyStats(req, res, moreThanMetricsDB))
+
+async function getCompanyStats(req, res, moreThanMetricsDB) {
     const companyID = req.params.companyID
     const getNoOfApplications =
         "SELECT COUNT(application_id) FROM application_status JOIN jobs ON application_status.job_id = jobs.job_id JOIN companies ON jobs.company_id = companies.company_id WHERE jobs.company_id = $1"
@@ -237,10 +120,12 @@ app.get("/company/stats/:companyID", async (req, res) => {
     client.release()
     res.status(200).send(noOfApplications)
     return noOfApplications
-})
+}
 
 //for Company
-app.get("/job/stats/:jobID", async (req, res) => {
+app.get("/job/stats/:jobID", async (req, res) => getJobStats(req, res, moreThanMetricsDB))
+
+async function getJobStats(req, res, moreThanMetricsDB) {
     const jobID = req.params.jobID
     const getNoOfApplications = "SELECT COUNT(application_id) FROM application_status WHERE job_id = $1"
     const client = await moreThanMetricsDB.connect()
@@ -249,10 +134,12 @@ app.get("/job/stats/:jobID", async (req, res) => {
     client.release()
     res.status(200).send(noOfApplications)
     return noOfApplications
-})
+}
 
 //for Company
-app.get("/applications/review/:jobID", async (req, res) => {
+app.get("/applications/review/:jobID", async (req, res) => reviewApplication(req, res, moreThanMetricsDB))
+
+async function reviewApplication(req, res, moreThanMetricsDB) {
     const client = await moreThanMetricsDB.connect()
     const jobID = req.params.jobID
     const getApplications =
@@ -291,10 +178,12 @@ app.get("/applications/review/:jobID", async (req, res) => {
         res.status(200).send(applicants)
     }
     client.release()
-})
+}
 
 //for Company
-app.patch("/applications/assess", async (req, res) => {
+app.patch("/applications/assess", async (req, res) => acceptApplication(req, res, moreThanMetricsDB))
+
+async function acceptApplication(req, res, moreThanMetricsDB) {
     const { accepted, applicationID } = req.body
     if (typeof accepted !== "boolean") {
         return res.status(400).send("Passing wrong type of value")
@@ -310,10 +199,12 @@ app.patch("/applications/assess", async (req, res) => {
             res.status(500).send(error)
         })
     client.release()
-})
+}
 
 //for Company
-app.get("/applications/accepted/:jobID", async (req, res) => {
+app.get("/applications/accepted/:jobID", async (req, res) => getAcceptedApplications(req, res, moreThanMetricsDB))
+
+async function getAcceptedApplications(req, res, moreThanMetricsDB) {
     const client = await moreThanMetricsDB.connect()
     const jobID = req.params.jobID
     const getSuccessfulApplicants =
@@ -326,63 +217,18 @@ app.get("/applications/accepted/:jobID", async (req, res) => {
         res.status(200).send(successfulApplicants)
     }
     client.release()
-})
+}
 
 //for candidate
-app.post("/application", async (req, res) => {
-    const applicationDetails = req.body
-    const { candidateID, jobID, prompt1, answer1, prompt2, answer2, prompt3, answer3 } = applicationDetails
-    const validApplicationResponse = isValidApplication(applicationDetails)
-    if (validApplicationResponse !== true) {
-        return res.status(400).send(validApplicationResponse)
-    }
-    const client = await moreThanMetricsDB.connect()
-    const insertNewApplication =
-        "INSERT INTO application_status(reviewed, accepted, candidate_id, job_id) VALUES (false, false, $1, $2) RETURNING application_id"
-    const queryResult = await client.query(insertNewApplication, [candidateID, jobID]).catch((error) => {
-        client.release()
-        return res.status(500).send(error)
-    })
-    let applicationID = queryResult.rows[0].application_id
-    const insertApplicationResponses =
-        "INSERT INTO application_responses(application_id, prompt_id, answer) VALUES ($1, $2, $3), ($1, $4 ,$5), ($1, $6, $7)"
-    client
-        .query(insertApplicationResponses, [applicationID, prompt1, answer1, prompt2, answer2, prompt3, answer3])
-        .then(() => {
-            res.status(200).send("Added application details!")
-        })
-        .catch((error) => {
-            res.status(500).send(error)
-        })
-    client.release()
-})
+app.post("/application", async (req, res) => postNewApplication(req, res, moreThanMetricsDB))
 
 //for candidate
-app.get("/candidate/information/:candidateID", async (req, res) => {
-    const client = await moreThanMetricsDB.connect()
-    const candidateID = req.params.candidateID
-    const getCandidateInfo =
-        "SELECT candidate_name, headline, candidate_phone_number, candidate_years_in_industry_id, account_email FROM candidates JOIN accounts ON accounts.account_id = candidates.account_id WHERE candidate_id = $1"
-    const queryResult = await client.query(getCandidateInfo, [candidateID])
-    const candidateInfo = queryResult.rows
-    if (candidateInfo.length < 1) {
-        client.release()
-        return res.status(500).send("No candidate found")
-    }
-    const getCandidateTechnologies =
-        "SELECT * FROM candidates_technologies JOIN technologies ON technologies.technology_id = candidates_technologies.technology_id WHERE candidate_id = $1"
-    const techArray = []
-    const techQuery = await client.query(getCandidateTechnologies, [candidateID])
-    techQuery.rows.forEach((technology) => {
-        techArray.push(technology.technology_name)
-    })
-    candidateInfo[0]["technologies"] = techArray
-    res.status(200).send(candidateInfo)
-    client.release()
-})
+app.get("/candidate/information/:candidateID", async (req, res) => getCandidateProfile(req, res, moreThanMetricsDB))
 
 //for candidate
-app.post("/candidate/register", async (req, res) => {
+app.post("/candidate/register", async (req, res) => registerNewCandidate(req, res, moreThanMetricsDB))
+
+async function registerNewCandidate(req, res, moreThanMetricsDB) {
     const candidateDetails = req.body
     const { candidateEmail, candidatePassword, candidateName, headline, candidatePhoneNumber, yearsInIndustryID, technologies } = candidateDetails
     // Checks for duplicate email
@@ -424,10 +270,12 @@ app.post("/candidate/register", async (req, res) => {
     }
     res.status(200).send("Added candidate details")
     client.release()
-})
+}
 
 //for candidate
-app.put("/candidate/update", async (req, res) => {
+app.put("/candidate/update", async (req, res) => updateCandidateDetails(req, res, moreThanMetricsDB))
+
+async function updateCandidateDetails(req, res, moreThanMetricsDB) {
     const updatedDetails = req.body
     const { accountID, candidateEmail, candidatePassword, candidateName, headline, candidatePhoneNumber, yearsInIndustryID } = updatedDetails
     // Checks for duplicate email
@@ -457,14 +305,16 @@ app.put("/candidate/update", async (req, res) => {
             res.status(500).send(error)
         })
     client.release()
-})
+}
 
 // for Company
-app.get("/company/information/:companyID", async (req, res) => {
+app.get("/company/information/:companyID", async (req, res) => getCompanyProfile(req, res, moreThanMetricsDB))
+
+async function getCompanyProfile(req, res, moreThanMetricsDB) {
     const client = await moreThanMetricsDB.connect()
     const companyID = req.params.companyID
     const getCompanyInfo =
-        "SELECT company_name, company_bio, location, company_number_of_employees_id, company_female_employee_percentage, company_retention_rate, image_url, account_email FROM companies JOIN accounts ON accounts.account_id = companies.account_id WHERE company_id = $1"
+        "SELECT company_name, company_bio, location, number_of_employees.category, company_female_employee_percentage, company_retention_rate, image_url, account_email FROM companies JOIN accounts ON accounts.account_id = companies.account_id JOIN number_of_employees ON number_of_employees.number_of_employees_id = companies.company_number_of_employees_id WHERE company_id = $1"
     const queryResult = await client.query(getCompanyInfo, [companyID])
     const companyInfo = queryResult.rows
     if (companyInfo.length < 1) {
@@ -473,10 +323,12 @@ app.get("/company/information/:companyID", async (req, res) => {
     }
     res.status(200).send(companyInfo)
     client.release()
-})
+}
 
 //for Company
-app.post("/company/register", async (req, res) => {
+app.post("/company/register", async (req, res) => registerNewCompany(req, res, moreThanMetricsDB))
+
+async function registerNewCompany(req, res, moreThanMetricsDB) {
     const companyDetails = req.body
     const {
         companyEmail,
@@ -527,10 +379,12 @@ app.post("/company/register", async (req, res) => {
             res.status(500).send(error)
         })
     client.release()
-})
+}
 
 //for Company
-app.put("/company/update", async (req, res) => {
+app.put("/company/update", async (req, res) => updateCompanyDetails(req, res, moreThanMetricsDB))
+
+async function updateCompanyDetails(req, res, moreThanMetricsDB) {
     const updatedDetails = req.body
     const {
         accountID,
@@ -580,10 +434,12 @@ app.put("/company/update", async (req, res) => {
             res.status(500).send(error)
         })
     client.release()
-})
+}
 
 //for Both
-app.post("/login", async (req, res) => {
+app.post("/login", async (req, res) => loginUser(req, res, moreThanMetricsDB))
+
+async function loginUser(req, res, moreThanMetricsDB) {
     const { email, password } = req.body
     const client = await moreThanMetricsDB.connect()
     const getAccountLoginInfo =
@@ -619,59 +475,8 @@ app.post("/login", async (req, res) => {
             res.status(500).send({ message: error })
         })
     client.release()
-})
+}
 
 app.listen(PORT, () => {
     console.log(`Server started!`)
 })
-
-// async function isEmailTaken(email) {
-//     const client = await moreThanMetricsDB.connect()
-//     const emailQuery = await client.query("SELECT account_email FROM accounts WHERE account_email = $1", [email])
-//     client.release()
-//     if (emailQuery.rows.length >= 1) {
-//         return true
-//     }
-//     return false
-// }
-
-// async function isUpdatedEmailTaken(accountID, email) {
-//     const client = await moreThanMetricsDB.connect()
-//     const emailQuery = await client.query("SELECT account_email FROM accounts WHERE account_email = $1 AND account_email != $2", [email, accountID])
-//     client.release()
-//     if (emailQuery.rows.length >= 1) {
-//         return true
-//     }
-//     return false
-// }
-
-// async function updateAccount(accountID, email, password) {
-//     const salt = await bcrypt.genSalt()
-//     const hashedPassword = await bcrypt.hash(password, salt)
-//     const client = await moreThanMetricsDB.connect()
-//     const updateQuery = "UPDATE accounts SET account_email = $1, account_hashed_password = $2 WHERE account_id = $3"
-//     await client.query(updateQuery, [email, hashedPassword, accountID]).catch((error) => {
-//         client.release()
-//         return error
-//     })
-//     client.release()
-//     return true
-// }
-
-// async function insertNewAccount(email, password, accountType) {
-//     const salt = await bcrypt.genSalt()
-//     const hashedPassword = await bcrypt.hash(password, salt)
-//     const client = await moreThanMetricsDB.connect()
-//     const insertAccount = "INSERT INTO accounts (account_email, account_hashed_password, account_type_id) VALUES ($1, $2, $3);"
-//     let returnMessage = ""
-//     await client
-//         .query(insertAccount, [email, hashedPassword, accountType])
-//         .then(() => {
-//             returnMessage = "Registered new account!"
-//         })
-//         .catch((error) => {
-//             returnMessage = error
-//         })
-//     client.release()
-//     return returnMessage
-// }
