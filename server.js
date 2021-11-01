@@ -1,4 +1,11 @@
-const { isValidCompany, isValidCandidate, isValidJobDetails, isValidApplication } = require("./server-validation.js")
+const {
+    isValidCompany,
+    isValidCandidate,
+    isValidJobDetails,
+    isValidApplication,
+    isValidCandidateUpdate,
+    isValidCompanyUpdate,
+} = require("./server-validation.js")
 const { Pool } = require("pg")
 const express = require("express")
 const bcrypt = require("bcryptjs")
@@ -136,6 +143,7 @@ app.get("/jobs/:search?", async (req, res) => {
     }
 })
 
+//for candidate
 app.get("/job/:jobID", async (req, res) => {
     const client = await moreThanMetricsDB.connect()
     let jobID = req.params.jobID
@@ -165,6 +173,7 @@ app.get("/job/:jobID", async (req, res) => {
     client.release()
 })
 
+//for Company
 app.post("/jobs", async (req, res) => {
     const jobDetails = req.body
     const { jobTitle, jobDesc, location, salary, keyResponsibilities, keyTechnologies, companyID } = jobDetails
@@ -195,6 +204,47 @@ app.post("/jobs", async (req, res) => {
     })
     res.status(200).send("Added all job details")
     client.release()
+})
+
+//for candidate
+app.get("/applications/candidate/:candidateID", async (req, res) => {
+    const client = await moreThanMetricsDB.connect()
+    const candidateID = req.params.candidateID
+    const getCandidateApplications =
+        "SELECT application_id, jobs.job_id, job_title, company_name, reviewed, accepted FROM application_status JOIN jobs ON jobs.job_id = application_status.job_id JOIN companies ON companies.company_id = jobs.company_id WHERE candidate_id = $1"
+    const queryResult = await client.query(getCandidateApplications, [candidateID])
+    const candidateApplications = queryResult.rows
+    if (candidateApplications.length < 1) {
+        res.status(200).send("No applications made")
+    } else {
+        res.status(200).send(candidateApplications)
+    }
+    client.release()
+})
+
+//for Company
+app.get("/company/stats/:companyID", async (req, res) => {
+    const companyID = req.params.companyID
+    const getNoOfApplications =
+        "SELECT COUNT(application_id) FROM application_status JOIN jobs ON application_status.job_id = jobs.job_id JOIN companies ON jobs.company_id = companies.company_id WHERE jobs.company_id = $1"
+    const client = await moreThanMetricsDB.connect()
+    const queryResult = await client.query(getNoOfApplications, [companyID])
+    const noOfApplications = queryResult.rows[0].count
+    client.release()
+    res.status(200).send(noOfApplications)
+    return noOfApplications
+})
+
+//for Company
+app.get("/job/stats/:jobID", async (req, res) => {
+    const jobID = req.params.jobID
+    const getNoOfApplications = "SELECT COUNT(application_id) FROM application_status WHERE job_id = $1"
+    const client = await moreThanMetricsDB.connect()
+    const queryResult = await client.query(getNoOfApplications, [jobID])
+    const noOfApplications = queryResult.rows[0].count
+    client.release()
+    res.status(200).send(noOfApplications)
+    return noOfApplications
 })
 
 //for Company
@@ -232,7 +282,8 @@ app.get("/applications/review/:jobID", async (req, res) => {
     client.release()
 })
 
-app.patch("/applications", async (req, res) => {
+//for Company
+app.patch("/applications/assess", async (req, res) => {
     const { accepted, applicationID } = req.body
     if (typeof accepted !== "boolean") {
         return res.status(400).send("Passing wrong type of value")
@@ -314,8 +365,7 @@ app.get("/candidate/information/:candidateID", async (req, res) => {
 //for candidate
 app.post("/candidate/register", async (req, res) => {
     const candidateDetails = req.body
-    console.log(candidateDetails)
-    const { candidateEmail, candidatePassword, candidateName, headline, candidatePhoneNumber, yearsInIndustryID } = candidateDetails
+    const { candidateEmail, candidatePassword, candidateName, headline, candidatePhoneNumber, yearsInIndustryID, technologies } = candidateDetails
     // Checks for duplicate email
     if (await isEmailTaken(candidateEmail)) {
         return res.status(400).send("Email address already taken!")
@@ -335,11 +385,52 @@ app.post("/candidate/register", async (req, res) => {
     const accountIDQuery = await client.query("SELECT account_id FROM accounts WHERE account_email = $1", [candidateEmail])
     const accountID = accountIDQuery.rows[0].account_id
     const insertCandidateDetails =
-        "INSERT INTO candidates (candidate_name, headline, candidate_phone_number, candidate_years_in_industry_id, account_id) VALUES ($1, $2, $3, $4, $5)"
-    await client
+        "INSERT INTO candidates (candidate_name, headline, candidate_phone_number, candidate_years_in_industry_id, account_id) VALUES ($1, $2, $3, $4, $5) RETURNING candidate_id"
+    const queryResult = await client
         .query(insertCandidateDetails, [candidateName, headline, candidatePhoneNumber, yearsInIndustryID, accountID])
+        .catch((error) => {
+            client.release()
+            res.status(500).send(error)
+        })
+    const candidateID = queryResult.rows[0].candidate_id
+    technologies.forEach((technology) => {
+        client
+            .query("INSERT INTO candidates_technologies(candidate_id, technology_id) VALUES ($1, $2);", [candidateID, technology.technology_id])
+            .catch((error) => {
+                client.release()
+                return res.status(500).send(error)
+            })
+    })
+    res.status(200).send("Added candidate details")
+    client.release()
+})
+
+//for candidate
+app.put("/candidate/update", async (req, res) => {
+    const updatedDetails = req.body
+    const { accountID, candidateEmail, candidatePassword, candidateName, headline, candidatePhoneNumber, yearsInIndustryID } = updatedDetails
+    // Checks for duplicate email
+    if (await isUpdatedEmailTaken(candidateEmail, accountID)) {
+        return res.status(400).send("Email address already taken!")
+    }
+    // Validating candidate details
+    const validUpdateResponse = isValidCandidateUpdate(updatedDetails)
+    if (validUpdateResponse !== true) {
+        return res.status(400).send(validUpdateResponse)
+    }
+    // Updating account for candidate
+    const updateResponse = await updateAccount(accountID, candidateEmail, candidatePassword)
+    if (updateResponse !== true) {
+        return res.status(500).send(updateResponse)
+    }
+    // Updating (additional) details for candidate
+    const client = await moreThanMetricsDB.connect()
+    const updateCandidateDetails =
+        "UPDATE candidates SET candidate_name = $1, headline = $2, candidate_phone_number = $3, candidate_years_in_industry_id = $4 WHERE account_id = $5"
+    client
+        .query(updateCandidateDetails, [candidateName, headline, candidatePhoneNumber, yearsInIndustryID, accountID])
         .then(() => {
-            res.status(200).send("Added new candidate details!")
+            res.status(200).send("Updated candidate details!")
         })
         .catch((error) => {
             res.status(500).send(error)
@@ -417,30 +508,83 @@ app.post("/company/register", async (req, res) => {
     client.release()
 })
 
+//for Company
+app.put("/company/update", async (req, res) => {
+    const updatedDetails = req.body
+    const {
+        accountID,
+        companyEmail,
+        companyPassword,
+        companyName,
+        companyBio,
+        companyLocation,
+        numberOfEmployeesID,
+        femalePercentage,
+        retentionRate,
+        imageURL,
+    } = updatedDetails
+    // Checks for duplicate email
+    if (await isUpdatedEmailTaken(companyEmail, accountID)) {
+        return res.status(400).send("Email address already taken!")
+    }
+    // Validating company details
+    const validUpdateResponse = isValidCompanyUpdate(updatedDetails)
+    if (validUpdateResponse !== true) {
+        return res.status(400).send(validUpdateResponse)
+    }
+    // Updating account for company
+    const updateResponse = await updateAccount(accountID, companyEmail, companyPassword)
+    if (updateResponse !== true) {
+        return res.status(500).send(updateResponse)
+    }
+    // Updating (additional) details for company
+    const client = await moreThanMetricsDB.connect()
+    const updateCandidateDetails =
+        "UPDATE companies SET company_name = $1, company_bio = $2, location = $3, company_number_of_employees_id = $4, company_female_employee_percentage = $5, company_retention_rate = $6 , image_url = $7 WHERE account_id = $8;"
+    client
+        .query(updateCandidateDetails, [
+            companyName,
+            companyBio,
+            companyLocation,
+            numberOfEmployeesID,
+            femalePercentage,
+            retentionRate,
+            imageURL,
+            accountID,
+        ])
+        .then(() => {
+            res.status(200).send("Updated company details!")
+        })
+        .catch((error) => {
+            res.status(500).send(error)
+        })
+    client.release()
+})
+
 //for Both
 app.post("/login", async (req, res) => {
     const { email, password } = req.body
     const client = await moreThanMetricsDB.connect()
-
-    const getAccountLoginInfo = "SELECT account_email, account_hashed_password FROM accounts WHERE account_email = $1"
+    const getAccountLoginInfo =
+        "SELECT account_email, account_hashed_password, account_type_category FROM accounts JOIN account_type ON accounts.account_type_id = account_type.account_type_id WHERE account_email = $1"
     client
         .query(getAccountLoginInfo, [email])
         .then(async (queryResult) => {
             const [accountInfo] = queryResult.rows
             if (!queryResult.rowCount && !(await isEmailTaken(email))) {
+                client.release()
                 return res.status(400).send({ message: "Account does not exist!" })
             }
             const hashedPassword = accountInfo.account_hashed_password
             const isPasswordCorrect = await bcrypt.compare(password, hashedPassword)
             if (isPasswordCorrect) {
-                res.status(200).send({ message: "Successfully logged in!" })
+                res.status(200).send({ message: "Successfully logged in!", type: accountInfo.account_type_category })
             } else {
                 res.status(400).send({ message: "Password is invalid!" })
             }
         })
         .catch((error) => {
-            console.log(error)
-            res.status(500).send({ error })
+            res.status(500).send({ message: error })
         })
     client.release()
 })
@@ -457,6 +601,29 @@ async function isEmailTaken(email) {
         return true
     }
     return false
+}
+
+async function isUpdatedEmailTaken(accountID, email) {
+    const client = await moreThanMetricsDB.connect()
+    const emailQuery = await client.query("SELECT account_email FROM accounts WHERE account_email = $1 AND account_email != $2", [email, accountID])
+    client.release()
+    if (emailQuery.rows.length >= 1) {
+        return true
+    }
+    return false
+}
+
+async function updateAccount(accountID, email, password) {
+    const salt = await bcrypt.genSalt()
+    const hashedPassword = await bcrypt.hash(password, salt)
+    const client = await moreThanMetricsDB.connect()
+    const updateQuery = "UPDATE accounts SET account_email = $1, account_hashed_password = $2 WHERE account_id = $3"
+    await client.query(updateQuery, [email, hashedPassword, accountID]).catch((error) => {
+        client.release()
+        return error
+    })
+    client.release()
+    return true
 }
 
 async function insertNewAccount(email, password, accountType) {
