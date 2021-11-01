@@ -16,20 +16,22 @@ const DBSTRING = "postgres://hjtqvwqx:i-lgggJgY-howhBMFWrhsLpMOel53sxn@surus.db.
 
 const moreThanMetricsDB = new Pool({ connectionString: DBSTRING })
 const PORT = 8080
-// const whitelist = ["http://localhost:3000"]
-// const corsOptions = {
-//   credentials: true, // This is important.
-//   origin: (origin, callback) => {
-//     if (whitelist.includes(origin)) return callback(null, true)
+const whitelist = ["http://localhost:3000", "http://localhost:8080"]
+const corsOptions = {
+    credentials: true, // This is important.
+    origin: (origin, callback) => {
+        if (whitelist.includes(origin)) return callback(null, true)
 
-//     callback(new Error("Not allowed by CORS"))
-//   },
-// }
+        callback(new Error("Not allowed by CORS"))
+    },
+    // methods: ["GET", "PUT", "POST"],
+}
 
 const app = express()
 app.use(express.json())
-// app.use(cors(corsOptions))
-app.use(cors())
+app.use(cors(corsOptions))
+// app.use(cors())
+// app.options("*", cors())
 
 app.get("/number_of_employees", async (req, res) => {
     const client = await moreThanMetricsDB.connect()
@@ -577,8 +579,18 @@ app.post("/login", async (req, res) => {
             }
             const hashedPassword = accountInfo.account_hashed_password
             const isPasswordCorrect = await bcrypt.compare(password, hashedPassword)
-            if (isPasswordCorrect) {
-                res.status(200).send({ message: "Successfully logged in!", type: accountInfo.account_type_category })
+            const accountType = accountInfo.account_type_category
+            if (isPasswordCorrect && accountType === "candidate") {
+                res.setHeader("Content-Type", "text/html")
+                res.redirect(`http://localhost:3000/jobs`)
+                res.status(200).send({
+                    message: "Successfully logged in!",
+                    type: accountInfo.account_type_category,
+                    url: "http://localhost:3000/jobs",
+                })
+            } else if (isPasswordCorrect && accountType === "company") {
+                res.setHeader("Content-Type", "text/html")
+                res.redirect(`http://localhost:3000/dashboard`)
             } else {
                 res.status(400).send({ message: "Password is invalid!" })
             }
