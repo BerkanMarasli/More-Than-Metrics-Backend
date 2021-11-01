@@ -16,20 +16,22 @@ const DBSTRING = "postgres://hjtqvwqx:i-lgggJgY-howhBMFWrhsLpMOel53sxn@surus.db.
 
 const moreThanMetricsDB = new Pool({ connectionString: DBSTRING })
 const PORT = 8080
-// const whitelist = ["http://localhost:3000"]
+// const whitelist = ["http://localhost:3000", "http://localhost:8080"]
 // const corsOptions = {
-//   credentials: true, // This is important.
-//   origin: (origin, callback) => {
-//     if (whitelist.includes(origin)) return callback(null, true)
+//     credentials: true, // This is important.
+//     origin: (origin, callback) => {
+//         if (whitelist.includes(origin)) return callback(null, true)
 
-//     callback(new Error("Not allowed by CORS"))
-//   },
+//         callback(new Error("Not allowed by CORS"))
+//     },
+//     // methods: ["GET", "PUT", "POST"],
 // }
 
 const app = express()
 app.use(express.json())
 // app.use(cors(corsOptions))
 app.use(cors())
+// app.options("*", cors())
 
 app.get("/number_of_employees", async (req, res) => {
     const client = await moreThanMetricsDB.connect()
@@ -566,7 +568,7 @@ app.post("/login", async (req, res) => {
     const { email, password } = req.body
     const client = await moreThanMetricsDB.connect()
     const getAccountLoginInfo =
-        "SELECT account_email, account_hashed_password, account_type_category FROM accounts JOIN account_type ON accounts.account_type_id = account_type.account_type_id WHERE account_email = $1"
+        "SELECT account_id, account_email, account_hashed_password, account_type_category FROM accounts JOIN account_type ON accounts.account_type_id = account_type.account_type_id WHERE account_email = $1"
     client
         .query(getAccountLoginInfo, [email])
         .then(async (queryResult) => {
@@ -578,7 +580,18 @@ app.post("/login", async (req, res) => {
             const hashedPassword = accountInfo.account_hashed_password
             const isPasswordCorrect = await bcrypt.compare(password, hashedPassword)
             if (isPasswordCorrect) {
-                res.status(200).send({ message: "Successfully logged in!", type: accountInfo.account_type_category })
+                let typeID
+                let url
+                if (accountInfo.account_type_category === "company") {
+                    const getTypeID = await client.query("SELECT company_id FROM companies WHERE account_id = $1", [accountInfo.account_id])
+                    typeID = getTypeID.rows[0].company_id
+                    url = "http://localhost:3000/dashboard"
+                } else {
+                    const getTypeID = await client.query("SELECT candidate_id FROM candidates WHERE account_id = $1", [accountInfo.account_id])
+                    typeID = getTypeID.rows[0].candidate_id
+                    url = "http://localhost:3000/jobs"
+                }
+                res.status(200).send({ message: "Successfully logged in!", type: accountInfo.account_type_category, typeID: typeID, url: url })
             } else {
                 res.status(400).send({ message: "Password is invalid!" })
             }
@@ -587,6 +600,11 @@ app.post("/login", async (req, res) => {
             res.status(500).send({ message: error })
         })
     client.release()
+})
+
+app.post("/logout", async (req, res) => {
+    const url = "http://localhost:3000"
+    res.status(200).send({ message: "Successfully logged out!", url: url })
 })
 
 app.listen(PORT, () => {
