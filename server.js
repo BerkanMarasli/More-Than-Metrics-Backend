@@ -566,7 +566,7 @@ app.post("/login", async (req, res) => {
     const { email, password } = req.body
     const client = await moreThanMetricsDB.connect()
     const getAccountLoginInfo =
-        "SELECT account_email, account_hashed_password, account_type_category FROM accounts JOIN account_type ON accounts.account_type_id = account_type.account_type_id WHERE account_email = $1"
+        "SELECT account_id, account_email, account_hashed_password, account_type_category FROM accounts JOIN account_type ON accounts.account_type_id = account_type.account_type_id WHERE account_email = $1"
     client
         .query(getAccountLoginInfo, [email])
         .then(async (queryResult) => {
@@ -578,7 +578,17 @@ app.post("/login", async (req, res) => {
             const hashedPassword = accountInfo.account_hashed_password
             const isPasswordCorrect = await bcrypt.compare(password, hashedPassword)
             if (isPasswordCorrect) {
-                res.status(200).send({ message: "Successfully logged in!", type: accountInfo.account_type_category })
+                let typeID
+                let type
+                if (accountInfo.account_type_category === "company") {
+                    const getTypeID = await client.query("SELECT company_id FROM companies WHERE account_id = $1", [accountInfo.account_id])
+                    typeID = getTypeID.rows[0].company_id
+                    console.log(typeID)
+                } else {
+                    const getTypeID = await client.query("SELECT candidate_id FROM candidates WHERE account_id = $1", [accountInfo.account_id])
+                    typeID = getTypeID.rows[0].candidate_id
+                }
+                res.status(200).send({ message: "Successfully logged in!", type: accountInfo.account_type_category, typeID: typeID })
             } else {
                 res.status(400).send({ message: "Password is invalid!" })
             }
