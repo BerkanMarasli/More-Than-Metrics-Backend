@@ -18,21 +18,21 @@ const DBSTRING = "postgres://hjtqvwqx:i-lgggJgY-howhBMFWrhsLpMOel53sxn@surus.db.
 const moreThanMetricsDB = new Pool({ connectionString: DBSTRING })
 exports.moreThanMetricsDB = moreThanMetricsDB
 const PORT = 8080
-const whitelist = ["http://localhost:3000", "http://localhost:8080"]
-const corsOptions = {
-    credentials: true, // This is important.
-    origin: (origin, callback) => {
-        if (whitelist.includes(origin)) return callback(null, true)
+// const whitelist = ["http://localhost:3000", "http://localhost:8080"]
+// const corsOptions = {
+//     credentials: true, // This is important.
+//     origin: (origin, callback) => {
+//         if (whitelist.includes(origin)) return callback(null, true)
 
-        callback(new Error("Not allowed by CORS"))
-    },
-    // methods: ["GET", "PUT", "POST"],
-}
+//         callback(new Error("Not allowed by CORS"))
+//     },
+//     // methods: ["GET", "PUT", "POST"],
+// }
 
 const app = express()
 app.use(express.json())
-app.use(cors(corsOptions))
-// app.use(cors())
+// app.use(cors(corsOptions))
+app.use(cors())
 // app.options("*", cors())
 
 app.get("/number_of_employees", async (req, res) => {
@@ -256,7 +256,7 @@ app.get("/applications/review/:jobID", async (req, res) => {
     const client = await moreThanMetricsDB.connect()
     const jobID = req.params.jobID
     const getApplications =
-        "SELECT application_id, application_status.candidate_id, headline FROM application_status JOIN candidates ON candidates.candidate_id = application_status.candidate_id WHERE job_id = $1 AND reviewed = false"
+        "SELECT application_id, application_status.candidate_id, headline, years_in_industry.category FROM application_status JOIN candidates ON candidates.candidate_id = application_status.candidate_id JOIN years_in_industry ON candidates.candidate_years_in_industry_id = years_in_industry_id WHERE job_id = $1 AND reviewed = false"
     const queryResult = await client.query(getApplications, [jobID])
     const applicants = queryResult.rows
     if (applicants.length < 1) {
@@ -269,17 +269,24 @@ app.get("/applications/review/:jobID", async (req, res) => {
             const responsesQuery = await client.query(getResponses, [applicants[i].application_id])
             const responses = responsesQuery.rows
             for (let j = 0; j < responses.length; j++) {
-                console.log(responses[j])
                 const promptKey = "prompt" + (j + 1)
                 const answerKey = "answer" + (j + 1)
-                console.log(promptKey)
-                console.log(answerKey)
                 applicants[i] = {
                     ...applicants[i],
                     [promptKey]: responses[j].prompt,
                     [answerKey]: responses[j].answer,
                 }
             }
+            console.log("applicant " + applicants[i].candidate_id)
+            const getTechnologies =
+                "SELECT * FROM candidates_technologies JOIN technologies ON technologies.technology_id = candidates_technologies.technology_id WHERE candidate_id = $1"
+            const techArray = []
+            const techQuery = await client.query(getTechnologies, [applicants[i].candidate_id])
+            techQuery.rows.forEach((technology) => {
+                techArray.push(technology.technology_name)
+            })
+            console.log(techArray)
+            applicants[i]["technologies"] = techArray
         }
         res.status(200).send(applicants)
     }
@@ -362,6 +369,14 @@ app.get("/candidate/information/:candidateID", async (req, res) => {
         client.release()
         return res.status(500).send("No candidate found")
     }
+    const getCandidateTechnologies =
+        "SELECT * FROM candidates_technologies JOIN technologies ON technologies.technology_id = candidates_technologies.technology_id WHERE candidate_id = $1"
+    const techArray = []
+    const techQuery = await client.query(getCandidateTechnologies, [candidateID])
+    techQuery.rows.forEach((technology) => {
+        techArray.push(technology.technology_name)
+    })
+    candidateInfo[0]["technologies"] = techArray
     res.status(200).send(candidateInfo)
     client.release()
 })
@@ -399,10 +414,14 @@ app.post("/candidate/register", async (req, res) => {
     const candidateID = queryResult.rows[0].candidate_id
     console.log(candidateID)
     console.log(technologies)
-    technologies.forEach((technology) => {
-        console.log(technology)
-        client.query("INSERT INTO candidates_technologies(candidate_id, technology_id) VALUES ($1, $2);", [candidateID, technology])
-    })
+    for (let technology of technologies) {
+        client
+            .query("INSERT INTO candidates_technologies(candidate_id, technology_id) VALUES ($1, $2);", [candidateID, technology])
+            .catch((error) => {
+                client.release()
+                return res.status(500).send(error)
+            })
+    }
     res.status(200).send("Added candidate details")
     client.release()
 })
