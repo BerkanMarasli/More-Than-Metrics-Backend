@@ -602,6 +602,11 @@ app.post("/login", async (req, res) => {
     client.release()
 })
 
+app.post("/logout", async (req, res) => {
+    const url = "http://localhost:3000"
+    res.status(200).send({ message: "Successfully logged out!", url: url })
+})
+
 app.listen(PORT, () => {
     console.log(`Server started!`)
 })
