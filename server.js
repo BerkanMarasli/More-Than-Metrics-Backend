@@ -11,6 +11,7 @@ const { Pool } = require("pg")
 const express = require("express")
 const bcrypt = require("bcryptjs")
 const cors = require("cors")
+const cookieParser = require("cookie-parser")
 // const { v4: uuidv4 } = require("uuid");
 
 const DBSTRING = "postgres://hjtqvwqx:i-lgggJgY-howhBMFWrhsLpMOel53sxn@surus.db.elephantsql.com/hjtqvwqx"
@@ -18,7 +19,7 @@ const DBSTRING = "postgres://hjtqvwqx:i-lgggJgY-howhBMFWrhsLpMOel53sxn@surus.db.
 const moreThanMetricsDB = new Pool({ connectionString: DBSTRING })
 exports.moreThanMetricsDB = moreThanMetricsDB
 const PORT = 8080
-// const whitelist = ["http://localhost:3000", "http://localhost:8080"]
+// const whitelist = ["http://localhost:3000", "http://localhost:8080", "localhost:3000", "localhost:8080"]
 // const corsOptions = {
 //     credentials: true, // This is important.
 //     origin: (origin, callback) => {
@@ -26,14 +27,15 @@ const PORT = 8080
 
 //         callback(new Error("Not allowed by CORS"))
 //     },
-//     // methods: ["GET", "PUT", "POST"],
+//     optionsSuccessStatus: 200,
 // }
 
 const app = express()
 app.use(express.json())
 // app.use(cors(corsOptions))
-app.use(cors())
-// app.options("*", cors())
+app.use(cors({ credentials: true, origin: "http://localhost:3000" }))
+// app.use(cors())
+app.use(cookieParser())
 
 app.get("/number_of_employees", async (req, res) => {
     const client = await moreThanMetricsDB.connect()
@@ -599,18 +601,25 @@ app.post("/login", async (req, res) => {
             const hashedPassword = accountInfo.account_hashed_password
             const isPasswordCorrect = await bcrypt.compare(password, hashedPassword)
             if (isPasswordCorrect) {
-                let typeID
+                let userID
                 let url
                 if (accountInfo.account_type_category === "company") {
                     const getTypeID = await client.query("SELECT company_id FROM companies WHERE account_id = $1", [accountInfo.account_id])
-                    typeID = getTypeID.rows[0].company_id
+                    userID = getTypeID.rows[0].company_id
                     url = "http://localhost:3000/dashboard"
                 } else {
                     const getTypeID = await client.query("SELECT candidate_id FROM candidates WHERE account_id = $1", [accountInfo.account_id])
-                    typeID = getTypeID.rows[0].candidate_id
+                    userID = getTypeID.rows[0].candidate_id
                     url = "http://localhost:3000/jobs"
                 }
-                res.status(200).send({ message: "Successfully logged in!", type: accountInfo.account_type_category, typeID: typeID, url: url })
+                res.status(200)
+                    .cookie("moreThanMetricsAT", accountInfo.account_type_category, {
+                        maxAge: 86000000,
+                    })
+                    .cookie("moreThanMetricsID", userID, {
+                        maxAge: 86000000,
+                    })
+                    .send({ message: "Successfully logged in!", type: accountInfo.account_type_category, userID: userID, url: url })
             } else {
                 res.status(400).send({ message: "Password is invalid!" })
             }
@@ -619,6 +628,11 @@ app.post("/login", async (req, res) => {
             res.status(500).send({ message: error })
         })
     client.release()
+})
+
+app.post("/logout", async (req, res) => {
+    const url = "http://localhost:3000"
+    res.status(200).clearCookie("moreThanMetricsAT").clearCookie("moreThanMetricsID").send({ message: "Successfully logged out!", url: url })
 })
 
 app.listen(PORT, () => {
