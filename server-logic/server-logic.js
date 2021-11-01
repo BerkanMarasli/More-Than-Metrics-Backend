@@ -1,4 +1,5 @@
 const bcrypt = require("bcryptjs")
+
 exports.isEmailTaken = async function isEmailTaken(email, moreThanMetricsDB) {
     const client = await moreThanMetricsDB.connect()
     const emailQuery = await client.query("SELECT account_email FROM accounts WHERE account_email = $1", [email])
@@ -48,4 +49,56 @@ exports.insertNewAccount = async function insertNewAccount(email, password, acco
         })
     client.release()
     return returnMessage
+}
+
+exports.getNumberOfEmployees = async function getNumberOfEmployees(res, moreThanMetricsDB) {
+    const client = await moreThanMetricsDB.connect()
+    const getNOECategory = "SELECT * FROM number_of_employees"
+    const queryResult = await client.query(getNOECategory)
+    const NOECategories = queryResult.rows
+    if (NOECategories.length < 1) {
+        res.status(500).send("No categories for number of employees!")
+    } else {
+        res.status(200).send(NOECategories)
+    }
+    client.release()
+}
+
+exports.getYearsInIndustry = async function getYearsInIndustry(res, moreThanMetricsDB) {
+    const client = await moreThanMetricsDB.connect()
+    const getYIICategory = "SELECT * FROM years_in_industry"
+    const queryResult = await client.query(getYIICategory)
+    const YIICategories = queryResult.rows
+    if (YIICategories.length < 1) {
+        res.status(500).send("No categories for years in industry!")
+    } else {
+        res.status(200).send(YIICategories)
+    }
+    client.release()
+}
+
+exports.getAllTechnologies = async function getAllTechnologies(res, moreThanMetricsDB) {
+    const client = await moreThanMetricsDB.connect()
+    const getTechnologyCategory = "Select * FROM technologies"
+    const queryResult = await client.query(getTechnologyCategory)
+    const technologyCategories = queryResult.rows
+    if (technologyCategories.length < 1) {
+        res.status(500).send("No categories for technologies!")
+    } else {
+        res.status(200).send(technologyCategories)
+    }
+    client.release()
+}
+
+exports.getPrompts = async function getPrompts(res, moreThanMetricsDB) {
+    const client = await moreThanMetricsDB.connect()
+    const getPromptCategory = "Select * FROM prompts"
+    const queryResult = await client.query(getPromptCategory)
+    const promptsCategories = queryResult.rows
+    if (promptsCategories.length < 1) {
+        res.status(500).send("No categories for prompts!")
+    } else {
+        res.status(200).send(promptsCategories)
+    }
+    client.release()
 }
