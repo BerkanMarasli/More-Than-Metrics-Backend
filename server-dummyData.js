@@ -19,7 +19,7 @@ async function insertDummyData() {
 
   // Account Type Table
   insertQuery =
-    "INSERT INTO account_type (account_type_category) VALUES ('Candidate'), ('Company');";
+    "INSERT INTO account_type (account_type_category) VALUES ('candidate'), ('company');";
   client
     .query(insertQuery)
     .then(() => console.log("Inserted into account_type table successfully"))
