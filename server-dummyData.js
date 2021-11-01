@@ -19,7 +19,7 @@ async function insertDummyData() {
 
   // Account Type Table
   insertQuery =
-    "INSERT INTO account_type (account_type_category) VALUES ('Candidate'), ('Company');";
+    "INSERT INTO account_type (account_type_category) VALUES ('candidate'), ('company');";
   client
     .query(insertQuery)
     .then(() => console.log("Inserted into account_type table successfully"))
@@ -55,7 +55,8 @@ async function insertDummyData() {
 
   // Prompts Table
   insertQuery =
-    "INSERT INTO prompts (prompt) VALUES ('What is your fav colour?'), ('How happy are you?'), ('What is the meaning of life?'), ('How happy are you currently?'), ('Tell me about something no-one else knows'), ('How many dogs, cats and pigs do you own?');";
+    "INSERT INTO prompts (prompt) VALUES ('In 5 years time, I want to be...'),('The coolest side project I''ve built is...'),('The most impactful thing I''ve worked on is...'),('My favourite technology is... because...'),('I''m looking to change roles because...'),('The way I approach a problem is...'),('I''d be a great fit for this role because...'),('My biggest achievement is...'),('I want to work for a company that...'),('This opportunity excites me because...'),('In my next role, I''d like to...'),('My mantra is...'),('I get along best with people who...'),('What motivates me to come into work each day is...'),('Working with me looks like...'),('Beyond work, I''m really passionate about...'),('My best working patterns look like...'),('In order to produce my best work, I need...'),('I add value to teams by...'),('The stages of a project I work best at include...'),('The teams in which I thrive in are...'),('People often say I''m brilliant at...'),('In the last year, I''ve learnt...'),('The one thing you should know about me...'),('A life goal of mine is...'),('I want a job that...'),('If I was a superhero, my super power would be...'),('The animal I am most similar to is... because...'),('I am motivated by...'),('My greatest role model is...');";
+
   client
     .query(insertQuery)
     .then(() => console.log("Inserted into prompts table successfully"))
