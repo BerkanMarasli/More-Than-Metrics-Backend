@@ -16,21 +16,21 @@ const DBSTRING = "postgres://hjtqvwqx:i-lgggJgY-howhBMFWrhsLpMOel53sxn@surus.db.
 
 const moreThanMetricsDB = new Pool({ connectionString: DBSTRING })
 const PORT = 8080
-const whitelist = ["http://localhost:3000", "http://localhost:8080"]
-const corsOptions = {
-    credentials: true, // This is important.
-    origin: (origin, callback) => {
-        if (whitelist.includes(origin)) return callback(null, true)
+// const whitelist = ["http://localhost:3000", "http://localhost:8080"]
+// const corsOptions = {
+//     credentials: true, // This is important.
+//     origin: (origin, callback) => {
+//         if (whitelist.includes(origin)) return callback(null, true)
 
-        callback(new Error("Not allowed by CORS"))
-    },
-    // methods: ["GET", "PUT", "POST"],
-}
+//         callback(new Error("Not allowed by CORS"))
+//     },
+//     // methods: ["GET", "PUT", "POST"],
+// }
 
 const app = express()
 app.use(express.json())
-app.use(cors(corsOptions))
-// app.use(cors())
+// app.use(cors(corsOptions))
+app.use(cors())
 // app.options("*", cors())
 
 app.get("/number_of_employees", async (req, res) => {
@@ -600,6 +600,11 @@ app.post("/login", async (req, res) => {
             res.status(500).send({ message: error })
         })
     client.release()
+})
+
+app.post("/logout", async (req, res) => {
+    const url = "http://localhost:3000"
+    res.status(200).send({ message: "Successfully logged out!", url: url })
 })
 
 app.listen(PORT, () => {
