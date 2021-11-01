@@ -296,18 +296,20 @@ app.post("/application", async (req, res) => {
 })
 
 //for candidate
-// app.get("/candidate/information/:candidateID", async (req, res) => {
-//     const client = await moreThanMetricsDB.connect()
-//     const candidateID = req.params.candidateID
-//     const getCandidateInfo = "SELECT * FROM candidate JOIN accounts ON account.account_id = candidate.account_id WHERE candidate_id = $1"
-//     const queryResult = await client.query(getCandidateInfo, [candidateID]).catch((error) => {
-//         client.release()
-//         return res.status(500).send(error)
-//     })
-//     const candidateInfo = queryResult.rows
-//     res.status(200).send(candidateInfo)
-//     client.release()
-// })
+app.get("/candidate/information/:candidateID", async (req, res) => {
+    const client = await moreThanMetricsDB.connect()
+    const candidateID = req.params.candidateID
+    const getCandidateInfo =
+        "SELECT candidate_name, headline, candidate_phone_number, candidate_years_in_industry_id, account_email FROM candidates JOIN accounts ON accounts.account_id = candidates.account_id WHERE candidate_id = $1"
+    const queryResult = await client.query(getCandidateInfo, [candidateID])
+    const candidateInfo = queryResult.rows
+    if (candidateInfo.length < 1) {
+        client.release()
+        return res.status(500).send("No candidate found")
+    }
+    res.status(200).send(candidateInfo)
+    client.release()
+})
 
 //for candidate
 app.post("/candidate/register", async (req, res) => {
@@ -345,19 +347,21 @@ app.post("/candidate/register", async (req, res) => {
     client.release()
 })
 
-//for Company
-// app.get("/company/information/:companyID", async (req, res) => {
-//     const client = await moreThanMetricsDB.connect()
-//     const companyID = req.params.companyID
-//     const getCompanyInfo = "SELECT * FROM company JOIN accounts ON account.account_id = company.account_id WHERE company_id = $1"
-//     const queryResult = await client.query(getCompanyInfo, [companyID]).catch((error) => {
-//         client.release()
-//         return res.status(500).send(error)
-//     })
-//     const companyInfo = queryResult.rows
-//     res.status(200).send(companyInfo)
-//     client.release()
-// })
+// for Company
+app.get("/company/information/:companyID", async (req, res) => {
+    const client = await moreThanMetricsDB.connect()
+    const companyID = req.params.companyID
+    const getCompanyInfo =
+        "SELECT company_name, company_bio, location, company_number_of_employees_id, company_female_employee_percentage, company_retention_rate, image_url, account_email FROM companies JOIN accounts ON accounts.account_id = companies.account_id WHERE company_id = $1"
+    const queryResult = await client.query(getCompanyInfo, [companyID])
+    const companyInfo = queryResult.rows
+    if (companyInfo.length < 1) {
+        client.release()
+        return res.status(500).send("No company found")
+    }
+    res.status(200).send(companyInfo)
+    client.release()
+})
 
 //for Company
 app.post("/company/register", async (req, res) => {
