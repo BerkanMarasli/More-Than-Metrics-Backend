@@ -115,6 +115,7 @@ exports.postNewApplication = async function postNewApplication(req, res, moreTha
         client.release()
         return res.status(500).send(error)
     })
+    console.log(queryResult.rows)
     let applicationID = queryResult.rows[0].application_id
     const insertApplicationResponses =
         "INSERT INTO application_responses(application_id, prompt_id, answer) VALUES ($1, $2, $3), ($1, $4 ,$5), ($1, $6, $7)"

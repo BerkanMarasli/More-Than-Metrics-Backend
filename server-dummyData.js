@@ -6,66 +6,58 @@ INSERT INTO companies(company_name, company_bio, location, company_number_of_emp
 
 */
 
-const { Pool } = require("pg");
+const { Pool } = require("pg")
 
-const DBSTRING =
-  "postgres://hjtqvwqx:i-lgggJgY-howhBMFWrhsLpMOel53sxn@surus.db.elephantsql.com/hjtqvwqx";
+const DBSTRING = "postgres://hjtqvwqx:i-lgggJgY-howhBMFWrhsLpMOel53sxn@surus.db.elephantsql.com/hjtqvwqx"
 
-const moreThanMetricsDB = new Pool({ connectionString: DBSTRING });
-let insertQuery;
+const moreThanMetricsDB = new Pool({ connectionString: DBSTRING })
+let insertQuery
 
 async function insertDummyData() {
-  const client = await moreThanMetricsDB.connect();
+    const client = await moreThanMetricsDB.connect()
 
-  // Account Type Table
-  insertQuery =
-    "INSERT INTO account_type (account_type_category) VALUES ('candidate'), ('company');";
-  client
-    .query(insertQuery)
-    .then(() => console.log("Inserted into account_type table successfully"))
-    .catch((error) => console.log(error));
+    // Account Type Table
+    insertQuery = "INSERT INTO account_type (account_type_category) VALUES ('candidate'), ('company');"
+    client
+        .query(insertQuery)
+        .then(() => console.log("Inserted into account_type table successfully"))
+        .catch((error) => console.log(error))
 
-  // Years in Industry Table
-  insertQuery =
-    "INSERT INTO years_in_industry (category) VALUES ('<1'), ('1'), ('2'), ('3'), ('4'), ('5+');";
-  client
-    .query(insertQuery)
-    .then(() =>
-      console.log("Inserted into years_in_industry table successfully")
-    )
-    .catch((error) => console.log(error));
+    // Years in Industry Table
+    insertQuery = "INSERT INTO years_in_industry (category) VALUES ('<1'), ('1'), ('2'), ('3'), ('4'), ('5+');"
+    client
+        .query(insertQuery)
+        .then(() => console.log("Inserted into years_in_industry table successfully"))
+        .catch((error) => console.log(error))
 
-  // Number of Employees Table
-  insertQuery =
-    "INSERT INTO number_of_employees (category) VALUES ('<20'), ('20-99'), ('100-299'), ('300-499'), ('500-999'), ('1000+');";
-  client
-    .query(insertQuery)
-    .then(() =>
-      console.log("Inserted into number_of_employees table successfully")
-    )
-    .catch((error) => console.log(error));
+    // Number of Employees Table
+    insertQuery = "INSERT INTO number_of_employees (category) VALUES ('<20'), ('20-99'), ('100-299'), ('300-499'), ('500-999'), ('1000+');"
+    client
+        .query(insertQuery)
+        .then(() => console.log("Inserted into number_of_employees table successfully"))
+        .catch((error) => console.log(error))
 
-  // Technologies Table
-  insertQuery =
-    "INSERT INTO technologies (technology_name) VALUES ('Javascript'), ('Python'), ('React'), ('SQL'), ('NodeJS'), ('Deno'), ('Angular'), ('Java'), ('HTML5'), ('CSS3'), ('Express');";
-  client
-    .query(insertQuery)
-    .then(() => console.log("Inserted into technologies table successfully"))
-    .catch((error) => console.log(error));
+    // Technologies Table
+    insertQuery =
+        "INSERT INTO technologies (technology_name) VALUES ('Javascript'), ('Python'), ('React'), ('SQL'), ('NodeJS'), ('Deno'), ('Angular'), ('Java'), ('HTML5'), ('CSS3'), ('Express');"
+    client
+        .query(insertQuery)
+        .then(() => console.log("Inserted into technologies table successfully"))
+        .catch((error) => console.log(error))
 
-  // Prompts Table
-  insertQuery =
-    "INSERT INTO prompts (prompt) VALUES ('In 5 years time, I want to be...'),('The coolest side project I''ve built is...'),('The most impactful thing I''ve worked on is...'),('My favourite technology is... because...'),('I''m looking to change roles because...'),('The way I approach a problem is...'),('I''d be a great fit for this role because...'),('My biggest achievement is...'),('I want to work for a company that...'),('This opportunity excites me because...'),('In my next role, I''d like to...'),('My mantra is...'),('I get along best with people who...'),('What motivates me to come into work each day is...'),('Working with me looks like...'),('Beyond work, I''m really passionate about...'),('My best working patterns look like...'),('In order to produce my best work, I need...'),('I add value to teams by...'),('The stages of a project I work best at include...'),('The teams in which I thrive in are...'),('People often say I''m brilliant at...'),('In the last year, I''ve learnt...'),('The one thing you should know about me...'),('A life goal of mine is...'),('I want a job that...'),('If I was a superhero, my super power would be...'),('The animal I am most similar to is... because...'),('I am motivated by...'),('My greatest role model is...');";
+    // Prompts Table
+    insertQuery =
+        "INSERT INTO prompts (prompt) VALUES ('In 5 years time, I want to be...'),('The coolest side project I''ve built is...'),('The most impactful thing I''ve worked on is...'),('My favourite technology is... because...'),('I''m looking to change roles because...'),('The way I approach a problem is...'),('I''d be a great fit for this role because...'),('My biggest achievement is...'),('I want to work for a company that...'),('This opportunity excites me because...'),('In my next role, I''d like to...'),('My mantra is...'),('I get along best with people who...'),('What motivates me to come into work each day is...'),('Working with me looks like...'),('Beyond work, I''m really passionate about...'),('My best working patterns look like...'),('In order to produce my best work, I need...'),('I add value to teams by...'),('The stages of a project I work best at include...'),('The teams in which I thrive in are...'),('People often say I''m brilliant at...'),('In the last year, I''ve learnt...'),('The one thing you should know about me...'),('A life goal of mine is...'),('I want a job that...'),('If I was a superhero, my super power would be...'),('The animal I am most similar to is... because...'),('I am motivated by...'),('My greatest role model is...');"
 
-  client
-    .query(insertQuery)
-    .then(() => console.log("Inserted into prompts table successfully"))
-    .catch((error) => console.log(error));
+    client
+        .query(insertQuery)
+        .then(() => console.log("Inserted into prompts table successfully"))
+        .catch((error) => console.log(error))
 
-  return;
+    return
 
-  // use REST Client
-  /*
+    // use REST Client
+    /*
     POST http://localhost:8080/company/register
     content-type: application/json
 
@@ -108,7 +100,8 @@ async function insertDummyData() {
         "candidateName":"Sang ta",
         "headline":"Exotic",
         "candidatePhoneNumber":447812389483,
-        "yearsInIndustryID":2
+        "yearsInIndustryID":2,
+        "technologies": [1,3,5,7,8]
     }
 
     POST http://localhost:8080/candidate/register
@@ -121,20 +114,21 @@ async function insertDummyData() {
         "candidateName":"Berkan Marasli",
         "headline":"They call me Mr. Amazon",
         "candidatePhoneNumber":447817389483,
-        "yearsInIndustryID":4
+        "yearsInIndustryID":4,
+        "technologies": [1,3,5,7,8]
     }
   */
 
-  // CandidatesTechnologies Table
-  insertQuery =
-    "INSERT INTO candidates_technologies (candidate_id, technology_id) VALUES (1, 10), (1, 4), (1, 6), (1, 3), (1, 7), (1, 1), (2, 4), (2, 6), (2, 11), (2, 1);";
-  client
-    .query(insertQuery)
-    .then(() => console.log("Inserted into prompts table successfully"))
-    .catch((error) => console.log(error));
+    // CandidatesTechnologies Table
+    insertQuery =
+        "INSERT INTO candidates_technologies (candidate_id, technology_id) VALUES (1, 10), (1, 4), (1, 6), (1, 3), (1, 7), (1, 1), (2, 4), (2, 6), (2, 11), (2, 1);"
+    client
+        .query(insertQuery)
+        .then(() => console.log("Inserted into prompts table successfully"))
+        .catch((error) => console.log(error))
 
-  // use REST Client
-  /*
+    // use REST Client
+    /*
     POST http://localhost:8080/jobs
     content-type: application/json
 
@@ -283,7 +277,7 @@ async function insertDummyData() {
 
   */
 
-  client.release();
+    client.release()
 }
 
-insertDummyData();
+insertDummyData()
