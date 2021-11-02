@@ -16,6 +16,7 @@ const {
     acceptApplication,
     getAcceptedApplications,
     getCompanyProfile,
+    getCompanyJobs,
 } = require("./server-logic/company-logic.js")
 const {
     registerNewCandidate,
@@ -72,6 +73,7 @@ app.get("/candidate/information/:candidateID", async (req, res) => getCandidateP
 //Company endpoints
 app.post("/jobs", async (req, res) => postNewJob(req, res, moreThanMetricsDB))
 app.get("/company/stats/:companyID", async (req, res) => getCompanyStats(req, res, moreThanMetricsDB))
+app.get("/company/jobs/:companyID", async (req, res) => getCompanyJobs(req, res, moreThanMetricsDB))
 app.get("/job/stats/:jobID", async (req, res) => getJobStats(req, res, moreThanMetricsDB))
 app.get("/applications/review/:jobID", async (req, res) => reviewApplication(req, res, moreThanMetricsDB))
 app.patch("/applications/assess", async (req, res) => acceptApplication(req, res, moreThanMetricsDB))
