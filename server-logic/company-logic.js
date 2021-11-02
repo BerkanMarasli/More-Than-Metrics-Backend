@@ -59,6 +59,20 @@ exports.getCompanyStats = async function getCompanyStats(req, res, moreThanMetri
     return companyStats
 }
 
+exports.getCompanyJobs = async function getCompanyJobs(req, res, moreThanMetricsDB) {
+    const client = await moreThanMetricsDB.connect()
+    const companyID = req.params.companyID
+    const getCompanyJobs = "SELECT * FROM jobs WHERE company_id = $1"
+    const queryResult = client.query(getCompanyJobs, [companyID])
+    const companyJobs = (await queryResult).rows
+    if (companyJobs.length < 1) {
+        res.status(500).send("No company jobs!")
+    } else {
+        res.status(200).send(companyJobs)
+    }
+    client.release()
+}
+
 exports.getJobStats = async function getJobStats(req, res, moreThanMetricsDB) {
     const jobID = req.params.jobID
     const client = await moreThanMetricsDB.connect()
