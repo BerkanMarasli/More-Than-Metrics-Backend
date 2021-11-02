@@ -34,7 +34,7 @@ const cookieParser = require("cookie-parser")
 const DBSTRING = "postgres://hjtqvwqx:i-lgggJgY-howhBMFWrhsLpMOel53sxn@surus.db.elephantsql.com/hjtqvwqx"
 
 const moreThanMetricsDB = new Pool({ connectionString: DBSTRING })
-exports.moreThanMetricsDB = moreThanMetricsDB
+
 const PORT = 8080
 // const whitelist = ["http://localhost:3000", "http://localhost:8080", "localhost:3000", "localhost:8080"]
 // const corsOptions = {
