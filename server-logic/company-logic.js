@@ -96,6 +96,38 @@ exports.getJobStats = async function getJobStats(req, res, moreThanMetricsDB) {
     return jobStats
 }
 
+exports.getJobsAndStats = async function getJobsAndStats(req, res, moreThanMetricsDB) {
+    const client = await moreThanMetricsDB.connect()
+    const companyID = req.params.companyID
+    const getCompanyJobs = "SELECT * FROM jobs WHERE company_id = $1"
+    const queryResult = await client.query(getCompanyJobs, [companyID])
+    const companyJobs = queryResult.rows
+    const statsArray = []
+    for (const job of companyJobs) {
+        const jobID = job.job_id
+        const getNoOfApplications = "SELECT COUNT(application_id) FROM application_status WHERE job_id = $1"
+        const applicationResult = await client.query(getNoOfApplications, [jobID])
+        const getPending =
+            "SELECT COUNT(application_id) FROM application_status JOIN jobs ON application_status.job_id = jobs.job_id WHERE application_status.job_id = $1 and reviewed = false"
+        const pendingResult = await client.query(getPending, [jobID])
+        const getAccepted =
+            "SELECT COUNT(application_id) FROM application_status JOIN jobs ON application_status.job_id = jobs.job_id WHERE application_status.job_id = $1 and accepted = true"
+        const acceptedResult = await client.query(getAccepted, [jobID])
+        const jobStats = {}
+        jobStats["job_applications"] = parseInt(applicationResult.rows[0].count)
+        jobStats["job_pending"] = parseInt(pendingResult.rows[0].count)
+        jobStats["job_accepted"] = parseInt(acceptedResult.rows[0].count)
+        jobStats["job_rejected"] =
+            parseInt(applicationResult.rows[0].count) - parseInt(acceptedResult.rows[0].count) - parseInt(pendingResult.rows[0].count)
+        job["jobStats"] = jobStats
+        console.log(jobStats)
+        statsArray.push(jobStats)
+    }
+    client.release()
+    res.status(200).send(companyJobs)
+    return companyJobs
+}
+
 exports.reviewApplication = async function reviewApplication(req, res, moreThanMetricsDB) {
     const client = await moreThanMetricsDB.connect()
     const jobID = req.params.jobID
