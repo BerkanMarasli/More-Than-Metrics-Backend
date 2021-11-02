@@ -1,5 +1,6 @@
 const { insertNewAccount, isEmailTaken, isUpdatedEmailTaken, updateAccount } = require("./server-logic")
 const { isValidCandidate, isValidCandidateUpdate, isValidCompany, isValidCompanyUpdate } = require("./server-validation")
+const bcrypt = require("bcryptjs")
 
 exports.registerNewCandidate = async function registerNewCandidate(req, res, moreThanMetricsDB) {
     const candidateDetails = req.body

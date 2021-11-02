@@ -16,6 +16,7 @@ const {
     acceptApplication,
     getAcceptedApplications,
     getCompanyProfile,
+    getCompanyJobs,
 } = require("./server-logic/company-logic.js")
 const {
     registerNewCandidate,
@@ -34,7 +35,7 @@ const cookieParser = require("cookie-parser")
 const DBSTRING = "postgres://hjtqvwqx:i-lgggJgY-howhBMFWrhsLpMOel53sxn@surus.db.elephantsql.com/hjtqvwqx"
 
 const moreThanMetricsDB = new Pool({ connectionString: DBSTRING })
-exports.moreThanMetricsDB = moreThanMetricsDB
+
 const PORT = 8080
 // const whitelist = ["http://localhost:3000", "http://localhost:8080", "localhost:3000", "localhost:8080"]
 // const corsOptions = {
@@ -72,6 +73,7 @@ app.get("/candidate/information/:candidateID", async (req, res) => getCandidateP
 //Company endpoints
 app.post("/jobs", async (req, res) => postNewJob(req, res, moreThanMetricsDB))
 app.get("/company/stats/:companyID", async (req, res) => getCompanyStats(req, res, moreThanMetricsDB))
+app.get("/company/jobs/:companyID", async (req, res) => getCompanyJobs(req, res, moreThanMetricsDB))
 app.get("/job/stats/:jobID", async (req, res) => getJobStats(req, res, moreThanMetricsDB))
 app.get("/applications/review/:jobID", async (req, res) => reviewApplication(req, res, moreThanMetricsDB))
 app.patch("/applications/assess", async (req, res) => acceptApplication(req, res, moreThanMetricsDB))
