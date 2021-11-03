@@ -1,4 +1,4 @@
-const { insertNewAccount, isEmailTaken, isUpdatedEmailTaken, updateAccount } = require("./server-logic")
+const { insertNewAccount, isEmailTaken, isUpdatedEmailTaken, updateAccount, getAllTechnologies } = require("./server-logic")
 const { isValidCandidate, isValidCandidateUpdate, isValidCompany, isValidCompanyUpdate } = require("./server-validation")
 const bcrypt = require("bcryptjs")
 
@@ -7,17 +7,17 @@ exports.registerNewCandidate = async function registerNewCandidate(req, res, mor
     const { candidateEmail, candidatePassword, candidateName, headline, candidatePhoneNumber, yearsInIndustryID, technologies } = candidateDetails
     // Checks for duplicate email
     if (await isEmailTaken(candidateEmail, moreThanMetricsDB)) {
-        return res.status(400).send("Email address already taken!")
+        return res.status(400).send({ message: "Email address already taken!" })
     }
     // Validating candidate details
     const validCandidateResponse = isValidCandidate(candidateDetails)
     if (validCandidateResponse !== true) {
-        return res.status(400).send(validCandidateResponse)
+        return res.status(400).send({ message: validCandidateResponse })
     }
     // Creating new account for candidate
     const newAccountResponse = await insertNewAccount(candidateEmail, candidatePassword, 1, moreThanMetricsDB)
     if (newAccountResponse !== "Registered new account!") {
-        return res.status(500).send(newAccountResponse)
+        return res.status(500).send({ message: newAccountResponse })
     }
     // Inserting (additional) details for candidate
     const client = await moreThanMetricsDB.connect()
@@ -29,7 +29,7 @@ exports.registerNewCandidate = async function registerNewCandidate(req, res, mor
         .query(insertCandidateDetails, [candidateName, headline, candidatePhoneNumber, yearsInIndustryID, accountID])
         .catch((error) => {
             client.release()
-            return res.status(500).send(error)
+            return res.status(500).send({ message: error })
         })
     const candidateID = queryResult.rows[0].candidate_id
     console.log(candidateID)
@@ -39,42 +39,57 @@ exports.registerNewCandidate = async function registerNewCandidate(req, res, mor
             .query("INSERT INTO candidates_technologies(candidate_id, technology_id) VALUES ($1, $2);", [candidateID, technology])
             .catch((error) => {
                 client.release()
-                return res.status(500).send(error)
+                return res.status(500).send({ message: error })
             })
     }
-    res.status(200).send("Added candidate details")
+    res.status(200).send({ message: "Added candidate details" })
     client.release()
 }
 
 exports.updateCandidateDetails = async function updateCandidateDetails(req, res, moreThanMetricsDB) {
     const updatedDetails = req.body
-    const { accountID, candidateEmail, candidatePassword, candidateName, headline, candidatePhoneNumber, yearsInIndustryID } = updatedDetails
+    const { candidateID, candidateEmail, candidatePassword, candidateName, headline, candidatePhoneNumber, yearsInIndustryID, technologies } =
+        updatedDetails
+    const getAccountID = "SELECT account_id FROM candidates WHERE candidate_id = $1"
+    const client = await moreThanMetricsDB.connect()
+    const idResult = await client.query(getAccountID, [candidateID]).catch((error) => {
+        client.release()
+        return res.status(500).send({ message: error })
+    })
+
+    const accountID = idResult.rows[0].account_id
+    console.log(accountID)
     // Checks for duplicate email
-    if (await isUpdatedEmailTaken(candidateEmail, accountID, moreThanMetricsDB)) {
-        return res.status(400).send("Email address already taken!")
+    if (await isUpdatedEmailTaken(accountID, candidateEmail, moreThanMetricsDB)) {
+        return res.status(400).send({ message: "Email address already taken!" })
     }
     // Validating candidate details
     const validUpdateResponse = isValidCandidateUpdate(updatedDetails)
     if (validUpdateResponse !== true) {
-        return res.status(400).send(validUpdateResponse)
+        return res.status(400).send({ message: validUpdateResponse })
     }
     // Updating account for candidate
     const updateResponse = await updateAccount(accountID, candidateEmail, candidatePassword, moreThanMetricsDB)
     if (updateResponse !== true) {
-        return res.status(500).send(updateResponse)
+        return res.status(500).send({ message: updateResponse })
     }
     // Updating (additional) details for candidate
-    const client = await moreThanMetricsDB.connect()
     const updateCandidateDetails =
         "UPDATE candidates SET candidate_name = $1, headline = $2, candidate_phone_number = $3, candidate_years_in_industry_id = $4 WHERE account_id = $5"
-    client
-        .query(updateCandidateDetails, [candidateName, headline, candidatePhoneNumber, yearsInIndustryID, accountID])
-        .then(() => {
-            res.status(200).send("Updated candidate details!")
-        })
-        .catch((error) => {
-            res.status(500).send(error)
-        })
+    client.query(updateCandidateDetails, [candidateName, headline, candidatePhoneNumber, yearsInIndustryID, accountID]).catch((error) => {
+        res.status(500).send({ message: error })
+    })
+    const deleteTechnologies = "DELETE FROM candidates_technologies WHERE candidate_id = $1"
+    client.query(deleteTechnologies, [candidateID])
+    for (let technology of technologies) {
+        client
+            .query("INSERT INTO candidates_technologies(candidate_id, technology_id) VALUES ($1, $2);", [candidateID, technology])
+            .catch((error) => {
+                client.release()
+                return res.status(500).send({ message: error })
+            })
+    }
+    res.status(200).send({ message: "Updated candidate details!" })
     client.release()
 }
 
@@ -93,17 +108,17 @@ exports.registerNewCompany = async function registerNewCompany(req, res, moreTha
     } = companyDetails
     // Checks for duplicate email
     if (await isEmailTaken(companyEmail, moreThanMetricsDB)) {
-        return res.status(400).send("Email address already taken!")
+        return res.status(400).send({ message: "Email address already taken!" })
     }
     // Validating candidate details
     const validCompanyResponse = isValidCompany(companyDetails)
     if (validCompanyResponse !== true) {
-        return res.status(400).send(validCompanyResponse)
+        return res.status(400).send({ message: validCompanyResponse })
     }
     // Creating new account for company
     const newAccountResponse = await insertNewAccount(companyEmail, companyPassword, 2, moreThanMetricsDB)
     if (newAccountResponse !== "Registered new account!") {
-        return res.status(500).send(newAccountResponse)
+        return res.status(500).send({ message: newAccountResponse })
     }
     // Inserting (additional) details for company
     const client = await moreThanMetricsDB.connect()
@@ -123,10 +138,10 @@ exports.registerNewCompany = async function registerNewCompany(req, res, moreTha
             accountID,
         ])
         .then(() => {
-            res.status(200).send("Added new company details")
+            res.status(200).send({ message: "Added new company details" })
         })
         .catch((error) => {
-            res.status(500).send(error)
+            res.status(500).send({ message: error })
         })
     client.release()
 }
@@ -134,7 +149,7 @@ exports.registerNewCompany = async function registerNewCompany(req, res, moreTha
 exports.updateCompanyDetails = async function updateCompanyDetails(req, res, moreThanMetricsDB) {
     const updatedDetails = req.body
     const {
-        accountID,
+        companyID,
         companyEmail,
         companyPassword,
         companyName,
@@ -145,22 +160,30 @@ exports.updateCompanyDetails = async function updateCompanyDetails(req, res, mor
         retentionRate,
         imageURL,
     } = updatedDetails
+
+    const getAccountID = "SELECT account_id FROM companies WHERE company_id = $1"
+    const client = await moreThanMetricsDB.connect()
+    const idResult = await client.query(getAccountID, [companyID]).catch((error) => {
+        client.release()
+        return res.status(500).send({ message: error })
+    })
+    const accountID = idResult.rows[0].account_id
+    console.log(accountID)
     // Checks for duplicate email
-    if (await isUpdatedEmailTaken(companyEmail, accountID, moreThanMetricsDB)) {
-        return res.status(400).send("Email address already taken!")
+    if (await isUpdatedEmailTaken(accountID, companyEmail, moreThanMetricsDB)) {
+        return res.status(400).send({ message: "Email address already taken!" })
     }
     // Validating company details
     const validUpdateResponse = isValidCompanyUpdate(updatedDetails)
     if (validUpdateResponse !== true) {
-        return res.status(400).send(validUpdateResponse)
+        return res.status(400).send({ message: validUpdateResponse })
     }
     // Updating account for company
     const updateResponse = await updateAccount(accountID, companyEmail, companyPassword, moreThanMetricsDB)
     if (updateResponse !== true) {
-        return res.status(500).send(updateResponse)
+        return res.status(500).send({ message: updateResponse })
     }
     // Updating (additional) details for company
-    const client = await moreThanMetricsDB.connect()
     const updateCandidateDetails =
         "UPDATE companies SET company_name = $1, company_bio = $2, location = $3, company_number_of_employees_id = $4, company_female_employee_percentage = $5, company_retention_rate = $6 , image_url = $7 WHERE account_id = $8;"
     client
@@ -175,10 +198,10 @@ exports.updateCompanyDetails = async function updateCompanyDetails(req, res, mor
             accountID,
         ])
         .then(() => {
-            res.status(200).send("Updated company details!")
+            res.status(200).send({ message: "Updated company details!" })
         })
         .catch((error) => {
-            res.status(500).send(error)
+            res.status(500).send({ message: error })
         })
     client.release()
 }
