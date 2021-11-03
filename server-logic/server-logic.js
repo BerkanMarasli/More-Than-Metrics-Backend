@@ -12,7 +12,9 @@ exports.isEmailTaken = async function isEmailTaken(email, moreThanMetricsDB) {
 
 exports.isUpdatedEmailTaken = async function isUpdatedEmailTaken(accountID, email, moreThanMetricsDB) {
     const client = await moreThanMetricsDB.connect()
-    const emailQuery = await client.query("SELECT account_email FROM accounts WHERE account_email = $1 AND account_email != $2", [email, accountID])
+    console.log("THIS " + accountID, email)
+    const emailQuery = await client.query("SELECT * FROM accounts WHERE account_email = $1 AND account_id != $2", [email, accountID])
+    console.log(emailQuery.rows)
     client.release()
     if (emailQuery.rows.length >= 1) {
         return true
@@ -57,7 +59,7 @@ exports.getNumberOfEmployees = async function getNumberOfEmployees(res, moreThan
     const queryResult = await client.query(getNOECategory)
     const NOECategories = queryResult.rows
     if (NOECategories.length < 1) {
-        res.status(500).send("No categories for number of employees!")
+        res.status(500).send({ message: "No categories for number of employees!" })
     } else {
         res.status(200).send(NOECategories)
     }
@@ -70,7 +72,7 @@ exports.getYearsInIndustry = async function getYearsInIndustry(res, moreThanMetr
     const queryResult = await client.query(getYIICategory)
     const YIICategories = queryResult.rows
     if (YIICategories.length < 1) {
-        res.status(500).send("No categories for years in industry!")
+        res.status(500).send({ message: "No categories for years in industry!" })
     } else {
         res.status(200).send(YIICategories)
     }
@@ -83,7 +85,7 @@ exports.getAllTechnologies = async function getAllTechnologies(res, moreThanMetr
     const queryResult = await client.query(getTechnologyCategory)
     const technologyCategories = queryResult.rows
     if (technologyCategories.length < 1) {
-        res.status(500).send("No categories for technologies!")
+        res.status(500).send({ message: "No categories for technologies!" })
     } else {
         res.status(200).send(technologyCategories)
     }
@@ -96,7 +98,7 @@ exports.getPrompts = async function getPrompts(res, moreThanMetricsDB) {
     const queryResult = await client.query(getPromptCategory)
     const promptsCategories = queryResult.rows
     if (promptsCategories.length < 1) {
-        res.status(500).send("No categories for prompts!")
+        res.status(500).send({ message: "No categories for prompts!" })
     } else {
         res.status(200).send(promptsCategories)
     }

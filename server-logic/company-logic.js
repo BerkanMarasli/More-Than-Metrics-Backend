@@ -5,30 +5,30 @@ exports.postNewJob = async function postNewJob(req, res, moreThanMetricsDB) {
     const { jobTitle, jobDesc, location, salary, keyResponsibilities, keyTechnologies, companyID } = jobDetails
     const validJobDetails = isValidJobDetails(jobDetails)
     if (validJobDetails !== true) {
-        return res.status(400).send(validJobDetails)
+        return res.status(400).send({ message: validJobDetails })
     }
     const client = await moreThanMetricsDB.connect()
     const insertNewJob = "INSERT INTO jobs(job_title, job_description, location, salary, company_id) VALUES ($1, $2, $3, $4, $5) RETURNING job_id"
     const queryResult = await client.query(insertNewJob, [jobTitle, jobDesc, location, salary, companyID]).catch((error) => {
         client.release()
-        return res.status(500).send(error)
+        return res.status(500).send({ message: error })
     })
 
     let jobID = queryResult.rows[0].job_id
     keyResponsibilities.forEach((responsibility) => {
         client.query("INSERT INTO job_responsibilities(job_id, responsibility) VALUES ($1, $2)", [jobID, responsibility]).catch((error) => {
             client.release()
-            return res.status(500).send(error)
+            return res.status(500).send({ message: error })
         })
     })
 
     keyTechnologies.forEach((technologyID) => {
         client.query("INSERT INTO job_technologies(job_id, technology_id) VALUES ($1, $2)", [jobID, technologyID]).catch((error) => {
             client.release()
-            return res.status(500).send(error)
+            return res.status(500).send({ message: error })
         })
     })
-    res.status(200).send("Added all job details")
+    res.status(200).send({ message: "Added all job details" })
     client.release()
 }
 
@@ -66,7 +66,7 @@ exports.getCompanyJobs = async function getCompanyJobs(req, res, moreThanMetrics
     const queryResult = client.query(getCompanyJobs, [companyID])
     const companyJobs = (await queryResult).rows
     if (companyJobs.length < 1) {
-        res.status(500).send("No company jobs!")
+        res.status(500).send({ message: "No company jobs!" })
     } else {
         res.status(200).send(companyJobs)
     }
@@ -96,6 +96,38 @@ exports.getJobStats = async function getJobStats(req, res, moreThanMetricsDB) {
     return jobStats
 }
 
+exports.getJobsAndStats = async function getJobsAndStats(req, res, moreThanMetricsDB) {
+    const client = await moreThanMetricsDB.connect()
+    const companyID = req.params.companyID
+    const getCompanyJobs = "SELECT * FROM jobs WHERE company_id = $1"
+    const queryResult = await client.query(getCompanyJobs, [companyID])
+    const companyJobs = queryResult.rows
+    const statsArray = []
+    for (const job of companyJobs) {
+        const jobID = job.job_id
+        const getNoOfApplications = "SELECT COUNT(application_id) FROM application_status WHERE job_id = $1"
+        const applicationResult = await client.query(getNoOfApplications, [jobID])
+        const getPending =
+            "SELECT COUNT(application_id) FROM application_status JOIN jobs ON application_status.job_id = jobs.job_id WHERE application_status.job_id = $1 and reviewed = false"
+        const pendingResult = await client.query(getPending, [jobID])
+        const getAccepted =
+            "SELECT COUNT(application_id) FROM application_status JOIN jobs ON application_status.job_id = jobs.job_id WHERE application_status.job_id = $1 and accepted = true"
+        const acceptedResult = await client.query(getAccepted, [jobID])
+        const jobStats = {}
+        jobStats["job_applications"] = parseInt(applicationResult.rows[0].count)
+        jobStats["job_pending"] = parseInt(pendingResult.rows[0].count)
+        jobStats["job_accepted"] = parseInt(acceptedResult.rows[0].count)
+        jobStats["job_rejected"] =
+            parseInt(applicationResult.rows[0].count) - parseInt(acceptedResult.rows[0].count) - parseInt(pendingResult.rows[0].count)
+        job["jobStats"] = jobStats
+        console.log(jobStats)
+        statsArray.push(jobStats)
+    }
+    client.release()
+    res.status(200).send(companyJobs)
+    return companyJobs
+}
+
 exports.reviewApplication = async function reviewApplication(req, res, moreThanMetricsDB) {
     const client = await moreThanMetricsDB.connect()
     const jobID = req.params.jobID
@@ -104,7 +136,7 @@ exports.reviewApplication = async function reviewApplication(req, res, moreThanM
     const queryResult = await client.query(getApplications, [jobID])
     const applicants = queryResult.rows
     if (applicants.length < 1) {
-        res.status(400).send("No applicants")
+        res.status(400).send({ message: "No applicants" })
     } else {
         for (let i = 0; i < applicants.length; i++) {
             console.log(applicants[i])
@@ -140,17 +172,17 @@ exports.reviewApplication = async function reviewApplication(req, res, moreThanM
 exports.acceptApplication = async function acceptApplication(req, res, moreThanMetricsDB) {
     const { accepted, applicationID } = req.body
     if (typeof accepted !== "boolean") {
-        return res.status(400).send("Passing wrong type of value")
+        return res.status(400).send({ message: "Passing wrong type of value" })
     }
     const client = await moreThanMetricsDB.connect()
     const updateApplication = "UPDATE application_status SET reviewed = true, accepted = $1 WHERE application_id = $2"
     client
         .query(updateApplication, [accepted, applicationID])
         .then(() => {
-            res.status(200).send("Application updated")
+            res.status(200).send({ message: "Application updated" })
         })
         .catch((error) => {
-            res.status(500).send(error)
+            res.status(500).send({ message: error })
         })
     client.release()
 }
@@ -159,11 +191,11 @@ exports.getAcceptedApplications = async function getAcceptedApplications(req, re
     const client = await moreThanMetricsDB.connect()
     const jobID = req.params.jobID
     const getSuccessfulApplicants =
-        "SELECT application_id, candidate_name, candidate_phone_number FROM application_status JOIN candidates ON candidates.candidate_id = application_status.candidate_id WHERE job_id = $1 AND reviewed = true AND accepted = true"
+        "SELECT application_id, candidate_name, candidate_phone_number, account_email FROM application_status JOIN candidates ON candidates.candidate_id = application_status.candidate_id JOIN accounts ON accounts.account_id = candidates.account_id WHERE job_id = $1 AND reviewed = true AND accepted = true"
     const queryResult = await client.query(getSuccessfulApplicants, [jobID])
     const successfulApplicants = queryResult.rows
     if (successfulApplicants.length < 1) {
-        res.status(400).send("No successful applicants")
+        res.status(400).send({ message: "No successful applicants" })
     } else {
         res.status(200).send(successfulApplicants)
     }
@@ -179,7 +211,7 @@ exports.getCompanyProfile = async function getCompanyProfile(req, res, moreThanM
     const companyInfo = queryResult.rows
     if (companyInfo.length < 1) {
         client.release()
-        return res.status(500).send("No company found")
+        return res.status(500).send({ message: "No company found" })
     }
     res.status(200).send(companyInfo)
     client.release()
