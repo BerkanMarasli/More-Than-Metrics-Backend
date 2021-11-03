@@ -191,7 +191,7 @@ exports.getAcceptedApplications = async function getAcceptedApplications(req, re
     const client = await moreThanMetricsDB.connect()
     const jobID = req.params.jobID
     const getSuccessfulApplicants =
-        "SELECT application_id, candidate_name, candidate_phone_number FROM application_status JOIN candidates ON candidates.candidate_id = application_status.candidate_id WHERE job_id = $1 AND reviewed = true AND accepted = true"
+        "SELECT application_id, candidate_name, candidate_phone_number, account_email FROM application_status JOIN candidates ON candidates.candidate_id = application_status.candidate_id JOIN accounts ON accounts.account_id = candidates.account_id WHERE job_id = $1 AND reviewed = true AND accepted = true"
     const queryResult = await client.query(getSuccessfulApplicants, [jobID])
     const successfulApplicants = queryResult.rows
     if (successfulApplicants.length < 1) {
