@@ -142,11 +142,11 @@ exports.getCandidateProfile = async function getCandidateProfile(req, res, moreT
     }
     console.log(candidateInfo.candidate_phone_number)
     const getCandidateTechnologies =
-        "SELECT * FROM candidates_technologies JOIN technologies ON technologies.technology_id = candidates_technologies.technology_id WHERE candidate_id = $1"
+        "SELECT candidates_technologies.technology_id, technology_name FROM candidates_technologies JOIN technologies ON technologies.technology_id = candidates_technologies.technology_id WHERE candidate_id = $1"
     const techArray = []
     const techQuery = await client.query(getCandidateTechnologies, [candidateID])
     techQuery.rows.forEach((technology) => {
-        techArray.push(technology.technology_name)
+        techArray.push(technology)
     })
     candidateInfo[0]["technologies"] = techArray
     res.status(200).send(candidateInfo)
