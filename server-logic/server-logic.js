@@ -12,9 +12,7 @@ exports.isEmailTaken = async function isEmailTaken(email, moreThanMetricsDB) {
 
 exports.isUpdatedEmailTaken = async function isUpdatedEmailTaken(accountID, email, moreThanMetricsDB) {
     const client = await moreThanMetricsDB.connect()
-    console.log("THIS " + accountID, email)
     const emailQuery = await client.query("SELECT * FROM accounts WHERE account_email = $1 AND account_id != $2", [email, accountID])
-    console.log(emailQuery.rows)
     client.release()
     if (emailQuery.rows.length >= 1) {
         return true
