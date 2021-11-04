@@ -86,6 +86,7 @@ exports.updateCandidateDetails = async function updateCandidateDetails(req, res,
     const deleteTechnologies = "DELETE FROM candidates_technologies WHERE candidate_id = $1"
     client.query(deleteTechnologies, [candidateID])
     for (let technology of technologies) {
+        console.log(technology)
         client
             .query("INSERT INTO candidates_technologies(candidate_id, technology_id) VALUES ($1, $2);", [candidateID, technology])
             .catch((error) => {
