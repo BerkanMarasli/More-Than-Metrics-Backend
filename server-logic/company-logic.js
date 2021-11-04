@@ -135,7 +135,7 @@ exports.reviewApplication = async function reviewApplication(req, res, moreThanM
     const queryResult = await client.query(getApplications, [jobID])
     const applicants = queryResult.rows
     if (applicants.length < 1) {
-        res.status(400).send({ message: "No applicants" })
+        res.status(400).send({ message: "No candidates to review" })
     } else {
         for (let i = 0; i < applicants.length; i++) {
             const getResponses =
