@@ -53,6 +53,7 @@ exports.registerNewCandidate = async function registerNewCandidate(req, res, mor
 
 exports.updateCandidateDetails = async function updateCandidateDetails(req, res, moreThanMetricsDB) {
     const updatedDetails = req.body
+    console.log(candidateDetails)
     const { candidateID, candidateEmail, candidatePassword, candidateName, headline, candidatePhoneNumber, yearsInIndustryID, technologies } =
         updatedDetails
     const getAccountID = "SELECT account_id FROM candidates WHERE candidate_id = $1"
