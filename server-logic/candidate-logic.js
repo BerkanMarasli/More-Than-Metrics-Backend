@@ -140,7 +140,7 @@ exports.getCandidateProfile = async function getCandidateProfile(req, res, moreT
         client.release()
         return res.status(500).send({ message: "No candidate found" })
     }
-    console.log(candidateInfo.candidate_phone_number)
+    console.log(candidateInfo)
     const getCandidateTechnologies =
         "SELECT candidates_technologies.technology_id, technology_name FROM candidates_technologies JOIN technologies ON technologies.technology_id = candidates_technologies.technology_id WHERE candidate_id = $1"
     const techArray = []
