@@ -25,25 +25,30 @@ exports.registerNewCandidate = async function registerNewCandidate(req, res, mor
     const accountID = accountIDQuery.rows[0].account_id
     const insertCandidateDetails =
         "INSERT INTO candidates (candidate_name, headline, candidate_phone_number, candidate_years_in_industry_id, account_id) VALUES ($1, $2, $3, $4, $5) RETURNING candidate_id"
+    let errorFlag = false
     const queryResult = await client
         .query(insertCandidateDetails, [candidateName, headline, candidatePhoneNumber, yearsInIndustryID, accountID])
         .catch((error) => {
-            client.release()
+            errorFlag = true
             return res.status(500).send({ message: error })
         })
+    if (errorFlag) {
+        client.release()
+        return
+    }
     const candidateID = queryResult.rows[0].candidate_id
-    console.log(candidateID)
-    console.log(technologies)
     for (let technology of technologies) {
         client
             .query("INSERT INTO candidates_technologies(candidate_id, technology_id) VALUES ($1, $2);", [candidateID, technology])
             .catch((error) => {
-                client.release()
+                errorFlag = true
                 return res.status(500).send({ message: error })
             })
     }
-    res.status(200).send({ message: "Added candidate details" })
     client.release()
+    if (!errorFlag) {
+        return res.status(200).send({ message: "Added candidate details" })
+    }
 }
 
 exports.updateCandidateDetails = async function updateCandidateDetails(req, res, moreThanMetricsDB) {
@@ -58,7 +63,6 @@ exports.updateCandidateDetails = async function updateCandidateDetails(req, res,
     })
 
     const accountID = idResult.rows[0].account_id
-    console.log(accountID)
     // Checks for duplicate email
     if (await isUpdatedEmailTaken(accountID, candidateEmail, moreThanMetricsDB)) {
         return res.status(400).send({ message: "Email address already taken!" })
@@ -168,7 +172,6 @@ exports.updateCompanyDetails = async function updateCompanyDetails(req, res, mor
         return res.status(500).send({ message: error })
     })
     const accountID = idResult.rows[0].account_id
-    console.log(accountID)
     // Checks for duplicate email
     if (await isUpdatedEmailTaken(accountID, companyEmail, moreThanMetricsDB)) {
         return res.status(400).send({ message: "Email address already taken!" })

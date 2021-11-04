@@ -115,7 +115,6 @@ exports.postNewApplication = async function postNewApplication(req, res, moreTha
         client.release()
         return res.status(500).send({ message: error })
     })
-    console.log(queryResult.rows)
     let applicationID = queryResult.rows[0].application_id
     const insertApplicationResponses =
         "INSERT INTO application_responses(application_id, prompt_id, answer) VALUES ($1, $2, $3), ($1, $4 ,$5), ($1, $6, $7)"
@@ -141,12 +140,13 @@ exports.getCandidateProfile = async function getCandidateProfile(req, res, moreT
         client.release()
         return res.status(500).send({ message: "No candidate found" })
     }
+    console.log(candidateInfo.candidate_phone_number)
     const getCandidateTechnologies =
-        "SELECT * FROM candidates_technologies JOIN technologies ON technologies.technology_id = candidates_technologies.technology_id WHERE candidate_id = $1"
+        "SELECT candidates_technologies.technology_id, technology_name FROM candidates_technologies JOIN technologies ON technologies.technology_id = candidates_technologies.technology_id WHERE candidate_id = $1"
     const techArray = []
     const techQuery = await client.query(getCandidateTechnologies, [candidateID])
     techQuery.rows.forEach((technology) => {
-        techArray.push(technology.technology_name)
+        techArray.push(technology)
     })
     candidateInfo[0]["technologies"] = techArray
     res.status(200).send(candidateInfo)
