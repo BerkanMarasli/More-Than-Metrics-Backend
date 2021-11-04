@@ -120,7 +120,6 @@ exports.getJobsAndStats = async function getJobsAndStats(req, res, moreThanMetri
         jobStats["job_rejected"] =
             parseInt(applicationResult.rows[0].count) - parseInt(acceptedResult.rows[0].count) - parseInt(pendingResult.rows[0].count)
         job["jobStats"] = jobStats
-        console.log(jobStats)
         statsArray.push(jobStats)
     }
     client.release()
@@ -139,7 +138,6 @@ exports.reviewApplication = async function reviewApplication(req, res, moreThanM
         res.status(400).send({ message: "No candidates to review" })
     } else {
         for (let i = 0; i < applicants.length; i++) {
-            console.log(applicants[i])
             const getResponses =
                 "SELECT prompt, answer FROM application_responses JOIN prompts ON prompts.prompt_id = application_responses.prompt_id WHERE application_id = $1"
             const responsesQuery = await client.query(getResponses, [applicants[i].application_id])
@@ -153,7 +151,6 @@ exports.reviewApplication = async function reviewApplication(req, res, moreThanM
                     [answerKey]: responses[j].answer,
                 }
             }
-            console.log("applicant " + applicants[i].candidate_id)
             const getTechnologies =
                 "SELECT * FROM candidates_technologies JOIN technologies ON technologies.technology_id = candidates_technologies.technology_id WHERE candidate_id = $1"
             const techArray = []
@@ -161,7 +158,6 @@ exports.reviewApplication = async function reviewApplication(req, res, moreThanM
             techQuery.rows.forEach((technology) => {
                 techArray.push(technology.technology_name)
             })
-            console.log(techArray)
             applicants[i]["technologies"] = techArray
         }
         res.status(200).send(applicants)
