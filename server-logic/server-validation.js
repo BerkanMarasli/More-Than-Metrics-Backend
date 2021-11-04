@@ -70,7 +70,7 @@ exports.isValidCandidate = function isValidCandidate(candidateDetails) {
     if (yearsInIndustryID === undefined || yearsInIndustryID === null) {
         return "Years in industry not specified!"
     }
-    if (yearsInIndustryID > 5 || yearsInIndustryID < 1) {
+    if (yearsInIndustryID > 6 || yearsInIndustryID < 1) {
         return "Years in industry is out of range!"
     }
     if (technologies.length < 1) {
@@ -176,7 +176,7 @@ exports.isValidCandidateUpdate = function isValidCandidateUpdate(updatedDetails)
     if (yearsInIndustryID === undefined || yearsInIndustryID === null) {
         return "Years in industry not specified!"
     }
-    if (yearsInIndustryID > 5 || yearsInIndustryID < 1) {
+    if (yearsInIndustryID > 6 || yearsInIndustryID < 1) {
         return "Years in industry is out of range!"
     }
     return true

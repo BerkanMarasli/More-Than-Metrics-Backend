@@ -34,7 +34,8 @@ exports.searchAllJobs = async function searchAllJobs(req, res, moreThanMetricsDB
     let search = req.params.search
     if (search === undefined) {
         search = ""
-        const getAllJobs = "SELECT job_id, job_title, company_name FROM jobs JOIN companies ON companies.company_id = jobs.company_id ORDER BY job_id"
+        const getAllJobs =
+            "SELECT job_id, job_title, company_name, image_url FROM jobs JOIN companies ON companies.company_id = jobs.company_id ORDER BY job_id"
         const queryResult = await client.query(getAllJobs)
         const jobs = queryResult.rows
         if (jobs.length < 1) {
@@ -140,7 +141,6 @@ exports.getCandidateProfile = async function getCandidateProfile(req, res, moreT
         client.release()
         return res.status(500).send({ message: "No candidate found" })
     }
-    console.log(candidateInfo.candidate_phone_number)
     const getCandidateTechnologies =
         "SELECT candidates_technologies.technology_id, technology_name FROM candidates_technologies JOIN technologies ON technologies.technology_id = candidates_technologies.technology_id WHERE candidate_id = $1"
     const techArray = []
