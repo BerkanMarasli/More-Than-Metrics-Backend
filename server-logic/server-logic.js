@@ -24,11 +24,20 @@ exports.updateAccount = async function updateAccount(accountID, email, password,
     const salt = await bcrypt.genSalt()
     const hashedPassword = await bcrypt.hash(password, salt)
     const client = await moreThanMetricsDB.connect()
-    const updateQuery = "UPDATE accounts SET account_email = $1, account_hashed_password = $2 WHERE account_id = $3"
-    await client.query(updateQuery, [email, hashedPassword, accountID]).catch((error) => {
-        client.release()
-        return error
-    })
+    let updateQuery = ""
+    if (password.length < 8) {
+        updateQuery = "UPDATE accounts SET account_email = $1 WHERE account_id = $2"
+        await client.query(updateQuery, [email, accountID]).catch((error) => {
+            client.release()
+            return error
+        })
+    } else {
+        updateQuery = "UPDATE accounts SET account_email = $1, account_hashed_password = $2 WHERE account_id = $3"
+        await client.query(updateQuery, [email, hashedPassword, accountID]).catch((error) => {
+            client.release()
+            return error
+        })
+    }
     client.release()
     return true
 }
