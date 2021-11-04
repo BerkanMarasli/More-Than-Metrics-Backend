@@ -34,7 +34,8 @@ exports.searchAllJobs = async function searchAllJobs(req, res, moreThanMetricsDB
     let search = req.params.search
     if (search === undefined) {
         search = ""
-        const getAllJobs = "SELECT job_id, job_title, company_name FROM jobs JOIN companies ON companies.company_id = jobs.company_id ORDER BY job_id"
+        const getAllJobs =
+            "SELECT job_id, job_title, company_name, image_url FROM jobs JOIN companies ON companies.company_id = jobs.company_id ORDER BY job_id"
         const queryResult = await client.query(getAllJobs)
         const jobs = queryResult.rows
         if (jobs.length < 1) {
