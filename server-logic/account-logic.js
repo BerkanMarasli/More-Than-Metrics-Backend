@@ -53,7 +53,6 @@ exports.registerNewCandidate = async function registerNewCandidate(req, res, mor
 
 exports.updateCandidateDetails = async function updateCandidateDetails(req, res, moreThanMetricsDB) {
     const updatedDetails = req.body
-    console.log(candidateDetails)
     const { candidateID, candidateEmail, candidatePassword, candidateName, headline, candidatePhoneNumber, yearsInIndustryID, technologies } =
         updatedDetails
     const getAccountID = "SELECT account_id FROM candidates WHERE candidate_id = $1"
@@ -87,6 +86,7 @@ exports.updateCandidateDetails = async function updateCandidateDetails(req, res,
     const deleteTechnologies = "DELETE FROM candidates_technologies WHERE candidate_id = $1"
     client.query(deleteTechnologies, [candidateID])
     for (let technology of technologies) {
+        console.log(technology, candidateID)
         client
             .query("INSERT INTO candidates_technologies(candidate_id, technology_id) VALUES ($1, $2);", [candidateID, technology])
             .catch((error) => {
