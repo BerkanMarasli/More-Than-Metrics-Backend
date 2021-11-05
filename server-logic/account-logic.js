@@ -242,15 +242,15 @@ exports.loginUser = async function loginUser(req, res, moreThanMetricsDB) {
                         maxAge: 86000000,
                         sameSite: "none",
                         secure: true,
-                        // domain: ".morethanmetrics.netlify.app",
-                        // path: "/jobs",
+                        domain: ".morethanmetrics.netlify.app",
+                        path: "/jobs",
                     })
                     .cookie("moreThanMetricsID", userID, {
                         maxAge: 86000000,
                         sameSite: "none",
                         secure: true,
-                        // domain: ".morethanmetrics.netlify.app",
-                        // path: "/jobs",
+                        domain: ".morethanmetrics.netlify.app",
+                        path: "/jobs",
                     })
                     .send({ message: "Successfully logged in!", type: accountInfo.account_type_category, userID: userID, url: url })
             } else {
