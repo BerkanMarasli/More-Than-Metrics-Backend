@@ -41,21 +41,21 @@ const { PORT, DB_CONNECTION_URL } = process.env
 
 const moreThanMetricsDB = new Pool({ connectionString: DB_CONNECTION_URL })
 
-// const whitelist = ["http://localhost:3000", "http://localhost:8080", "localhost:3000", "localhost:8080"]
-// const corsOptions = {
-//     credentials: true, // This is important.
-//     origin: (origin, callback) => {
-//         if (whitelist.includes(origin)) return callback(null, true)
+const whitelist = ["http://localhost:3000", "https://morethanmetrics.netlify.app"]
+const corsOptions = {
+    credentials: true, // This is important.
+    origin: (origin, callback) => {
+        if (whitelist.includes(origin)) return callback(null, true)
 
-//         callback(new Error("Not allowed by CORS"))
-//     },
-//     optionsSuccessStatus: 200,
-// }
+        callback(new Error("Not allowed by CORS"))
+    },
+    optionsSuccessStatus: 200,
+}
 
 const app = express()
 app.use(express.json())
-// app.use(cors(corsOptions))
-app.use(cors({ credentials: true, origin: "http://localhost:3000" }))
+app.use(cors(corsOptions))
+// app.use(cors({ credentials: true, origin: "https://morethanmetrics.netlify.app" }))
 // app.use(cors())
 app.use(cookieParser())
 
