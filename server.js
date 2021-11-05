@@ -1,3 +1,4 @@
+require("dotenv").config()
 const { getNumberOfEmployees, getYearsInIndustry, getAllTechnologies, getPrompts } = require("./server-logic/server-logic.js")
 const {
     getCompanyForCandidate,
@@ -33,11 +34,13 @@ const cors = require("cors")
 const cookieParser = require("cookie-parser")
 // const { v4: uuidv4 } = require("uuid");
 
-const DBSTRING = "postgres://hjtqvwqx:i-lgggJgY-howhBMFWrhsLpMOel53sxn@surus.db.elephantsql.com/hjtqvwqx"
+// const DBSTRING = "postgres://hjtqvwqx:i-lgggJgY-howhBMFWrhsLpMOel53sxn@surus.db.elephantsql.com/hjtqvwqx"
+// const PORT = 8080
 
-const moreThanMetricsDB = new Pool({ connectionString: DBSTRING })
+const { PORT, DB_CONNECTION_URL } = process.env
 
-const PORT = 8080
+const moreThanMetricsDB = new Pool({ connectionString: DB_CONNECTION_URL })
+
 // const whitelist = ["http://localhost:3000", "http://localhost:8080", "localhost:3000", "localhost:8080"]
 // const corsOptions = {
 //     credentials: true, // This is important.
