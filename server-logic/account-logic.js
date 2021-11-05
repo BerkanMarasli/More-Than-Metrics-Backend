@@ -280,5 +280,5 @@ exports.loginUser = async function loginUser(req, res, moreThanMetricsDB) {
 
 exports.logoutUser = async function logoutUser(res) {
     const url = "https://morethanmetrics.netlify.app"
-    res.status(200).clearCookie("moreThanMetricsAT").clearCookie("moreThanMetricsID").send({ message: "Successfully logged out!", url: url })
+    res.status(200).send({ message: "Successfully logged out!", url: url })
 }
