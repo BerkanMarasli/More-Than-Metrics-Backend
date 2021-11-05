@@ -231,11 +231,11 @@ exports.loginUser = async function loginUser(req, res, moreThanMetricsDB) {
                 if (accountInfo.account_type_category === "company") {
                     const getTypeID = await client.query("SELECT company_id FROM companies WHERE account_id = $1", [accountInfo.account_id])
                     userID = getTypeID.rows[0].company_id
-                    url = "http://localhost:3000/dashboard"
+                    url = "https://morethanmetrics.netlify.app/dashboard"
                 } else {
                     const getTypeID = await client.query("SELECT candidate_id FROM candidates WHERE account_id = $1", [accountInfo.account_id])
                     userID = getTypeID.rows[0].candidate_id
-                    url = "http://localhost:3000/jobs"
+                    url = "https://morethanmetrics.netlify.app/jobs"
                 }
                 res.status(200)
                     .cookie("moreThanMetricsAT", accountInfo.account_type_category, {
@@ -256,6 +256,6 @@ exports.loginUser = async function loginUser(req, res, moreThanMetricsDB) {
 }
 
 exports.logoutUser = async function logoutUser(res) {
-    const url = "http://localhost:3000"
+    const url = "https://morethanmetrics.netlify.app"
     res.status(200).clearCookie("moreThanMetricsAT").clearCookie("moreThanMetricsID").send({ message: "Successfully logged out!", url: url })
 }
