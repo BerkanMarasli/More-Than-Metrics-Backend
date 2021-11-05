@@ -567,4 +567,6 @@ POST http://localhost:8080/candidate/register
         "technologies": [1,3,7,8,9,13,16,17,18]
     }
 
+      
+
 */

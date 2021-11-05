@@ -214,43 +214,39 @@ exports.loginUser = async function loginUser(req, res, moreThanMetricsDB) {
     const client = await moreThanMetricsDB.connect()
     const getAccountLoginInfo =
         "SELECT account_id, account_email, account_hashed_password, account_type_category FROM accounts JOIN account_type ON accounts.account_type_id = account_type.account_type_id WHERE account_email = $1"
-    client
-        .query(getAccountLoginInfo, [email])
-        .then(async (queryResult) => {
-            const [accountInfo] = queryResult.rows
-            if (!queryResult.rowCount && !(await isEmailTaken(email, moreThanMetricsDB))) {
-                client.release()
-                return res.status(400).send({ message: "Account does not exist!" })
-            }
-            const hashedPassword = accountInfo.account_hashed_password
-            const isPasswordCorrect = await bcrypt.compare(password, hashedPassword)
-            if (isPasswordCorrect) {
-                let userID
-                let url
-                if (accountInfo.account_type_category === "company") {
-                    const getTypeID = await client.query("SELECT company_id FROM companies WHERE account_id = $1", [accountInfo.account_id])
-                    userID = getTypeID.rows[0].company_id
-                    url = "http://localhost:3000/dashboard"
-                } else {
-                    const getTypeID = await client.query("SELECT candidate_id FROM candidates WHERE account_id = $1", [accountInfo.account_id])
-                    userID = getTypeID.rows[0].candidate_id
-                    url = "http://localhost:3000/jobs"
-                }
-                res.status(200)
-                    .cookie("moreThanMetricsAT", accountInfo.account_type_category, {
-                        maxAge: 86000000,
-                    })
-                    .cookie("moreThanMetricsID", userID, {
-                        maxAge: 86000000,
-                    })
-                    .send({ message: "Successfully logged in!", type: accountInfo.account_type_category, userID: userID, url: url })
-            } else {
-                res.status(400).send({ message: "Password is invalid!" })
-            }
-        })
-        .catch((error) => {
-            res.status(500).send({ message: error })
-        })
+    const queryResult = await client.query(getAccountLoginInfo, [email]).catch((error) => {
+        return res.status(500).send({ message: error })
+    })
+    const [accountInfo] = queryResult.rows
+    if (!queryResult.rowCount && !(await isEmailTaken(email, moreThanMetricsDB))) {
+        client.release()
+        return res.status(400).send({ message: "Account does not exist!" })
+    }
+    const hashedPassword = accountInfo.account_hashed_password
+    const isPasswordCorrect = await bcrypt.compare(password, hashedPassword)
+    if (isPasswordCorrect) {
+        let userID
+        let url
+        if (accountInfo.account_type_category === "company") {
+            const getTypeID = await client.query("SELECT company_id FROM companies WHERE account_id = $1", [accountInfo.account_id])
+            userID = getTypeID.rows[0].company_id
+            url = "http://localhost:3000/dashboard"
+        } else {
+            const getTypeID = await client.query("SELECT candidate_id FROM candidates WHERE account_id = $1", [accountInfo.account_id])
+            userID = getTypeID.rows[0].candidate_id
+            url = "http://localhost:3000/jobs"
+        }
+        res.status(200)
+            .cookie("moreThanMetricsAT", accountInfo.account_type_category, {
+                maxAge: 86000000,
+            })
+            .cookie("moreThanMetricsID", userID, {
+                maxAge: 86000000,
+            })
+            .send({ message: "Successfully logged in!", type: accountInfo.account_type_category, userID: userID, url: url })
+    } else {
+        res.status(400).send({ message: "Password is invalid!" })
+    }
     client.release()
 }
 

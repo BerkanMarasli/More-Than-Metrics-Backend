@@ -1,3 +1,4 @@
 /node_modules
 testHTTP.http
 .DS_Store
+.env
