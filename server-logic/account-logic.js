@@ -237,22 +237,37 @@ exports.loginUser = async function loginUser(req, res, moreThanMetricsDB) {
                     userID = getTypeID.rows[0].candidate_id
                     url = "https://morethanmetrics.netlify.app/jobs"
                 }
-                res.status(200)
-                    .cookie("moreThanMetricsAT", accountInfo.account_type_category, {
-                        maxAge: 86000000,
-                        sameSite: "none",
-                        secure: true,
-                        domain: ".morethanmetrics.netlify.app",
-                        path: "/jobs",
-                    })
-                    .cookie("moreThanMetricsID", userID, {
-                        maxAge: 86000000,
-                        sameSite: "none",
-                        secure: true,
-                        domain: ".morethanmetrics.netlify.app",
-                        path: "/jobs",
-                    })
-                    .send({ message: "Successfully logged in!", type: accountInfo.account_type_category, userID: userID, url: url })
+                // res.status(200)
+                //     .cookie("moreThanMetricsAT", accountInfo.account_type_category, {
+                //         maxAge: 86000000,
+                //         sameSite: "none",
+                //         secure: true,
+                //         domain: ".morethanmetrics.netlify.app",
+                //         path: "/jobs",
+                //     })
+                //     .cookie("moreThanMetricsID", userID, {
+                //         maxAge: 86000000,
+                //         sameSite: "none",
+                //         secure: true,
+                //         domain: ".morethanmetrics.netlify.app",
+                //         path: "/jobs",
+                //     })
+                //     .send({
+                //         message: "Successfully logged in!",
+                //         type: accountInfo.account_type_category,
+                //         userID: userID,
+                //         url: url,
+                //         cookieOneToSet: `moreThanMetricsAT=${accountInfo.account_type_category};max-age=86000000;SameSite=None;Secure`,
+                //         cookieOneToSet: `moreThanMetricsID=${userID};max-age=86000000;SameSite=None;Secure`,
+                //     })
+                res.status(200).send({
+                    message: "Successfully logged in!",
+                    type: accountInfo.account_type_category,
+                    userID: userID,
+                    url: url,
+                    cookieOneToSet: `moreThanMetricsAT=${accountInfo.account_type_category};max-age=86000000;SameSite=None;Secure`,
+                    cookieTwoToSet: `moreThanMetricsID=${userID};max-age=86000000;SameSite=None;Secure`,
+                })
             } else {
                 res.status(400).send({ message: "Password is invalid!" })
             }
