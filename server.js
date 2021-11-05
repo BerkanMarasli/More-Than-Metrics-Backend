@@ -41,7 +41,7 @@ const { PORT, DB_CONNECTION_URL } = process.env
 
 const moreThanMetricsDB = new Pool({ connectionString: DB_CONNECTION_URL })
 
-const whitelist = ["http://localhost:3000", "https://morethanmetrics.netlify.app"]
+const whitelist = ["http://localhost:3000", "https://morethanmetrics.netlify.app", "http://morethanmetrics.co.uk"]
 const corsOptions = {
     credentials: true, // This is important.
     origin: (origin, callback) => {

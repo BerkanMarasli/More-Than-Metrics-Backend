@@ -265,8 +265,8 @@ exports.loginUser = async function loginUser(req, res, moreThanMetricsDB) {
                     type: accountInfo.account_type_category,
                     userID: userID,
                     url: url,
-                    cookieOneToSet: `moreThanMetricsAT=${accountInfo.account_type_category};max-age=86000000;SameSite=None;Secure`,
-                    cookieTwoToSet: `moreThanMetricsID=${userID};max-age=86000000;SameSite=None;Secure`,
+                    cookieOneToSet: `moreThanMetricsAT=${accountInfo.account_type_category};max-age=86400;SameSite=None;Secure`,
+                    cookieTwoToSet: `moreThanMetricsID=${userID};max-age=86400;SameSite=None;Secure`,
                 })
             } else {
                 res.status(400).send({ message: "Password is invalid!" })
