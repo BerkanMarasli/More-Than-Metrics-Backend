@@ -129,7 +129,7 @@ async function insertDummyData() {
 
     // use REST Client
     /*
-    POST http://localhost:8080/jobs
+    POST http://localhost:8080/jobs 
     content-type: application/json
 
     {
@@ -391,7 +391,6 @@ POST http://localhost:8080/company/register
         "imageURL": "https://static.thenounproject.com/png/84895-200.png"
     }
 
-
 {
         "companyEmail":"sangsung@electronics.com",
         "companyPassword":"Testing123!",
@@ -406,24 +405,11 @@ POST http://localhost:8080/company/register
     }
 
 {
-        "companyEmail":"sangsung@electronics.com",
+        "companyEmail":"kashapp@money.com",
         "companyPassword":"Testing123!",
         "companyPasswordConfirmation":"Testing123!",
-        "companyName":"Sangsung Electronics",
-        "companyBio":"Sangsung follows a simple business philosophy: to devote its talent and technology to creating superior products and services that contribute to a better global society. To achieve this, Sangsung sets a high value on its people and technologies. Sangsung believes that living by strong values is the key to good business. That’s why these core values, along with a rigorous code of conduct, are at the heart of every decision the company makes.",
-        "companyLocation":"Akihabara, Japan",
-        "numberOfEmployeesID":6,
-        "femalePercentage":46,
-        "retentionRate": 98,
-        "imageURL": "https://static.thenounproject.com/png/1180247-200.png"
-    }
-
-{
-        "companyEmail":"kashco@wholesale.com",
-        "companyPassword":"Testing123!",
-        "companyPasswordConfirmation":"Testing123!",
-        "companyName":"Kashco Wholesale",
-        "companyBio":"Kashco Wholesale is a multi-billion dollar global retailer with warehouse club operations in eight countries. We are the recognized leader in our field, dedicated to quality in every area of our business and respected for our outstanding business ethics. Despite our large size and explosive international expansion, we continue to provide a family atmosphere in which our employees thrive and succeed.",
+        "companyName":"Kash App",
+        "companyBio":"It’s never been easier to send money, but that doesn’t mean it shouldn’t be safe. Kash App utilizes a variety of safety features to process millions of payments a year and ensure the protection of our customers.Send and receive money anytime, anywhere. It’s fast and free, and a $cashtag is all you need to get started. With a Kash App account, you can receive paychecks up to 2 days early. Plus, ATM withdrawals are free when you have at least $300 coming in each month.",
         "companyLocation":"Washington DC, USA",
         "numberOfEmployeesID":6,
         "femalePercentage":78,
