@@ -236,14 +236,14 @@ exports.loginUser = async function loginUser(req, res, moreThanMetricsDB) {
             userID = getTypeID.rows[0].candidate_id
             url = "http://localhost:3000/jobs"
         }
-        res.status(200)
-            .cookie("moreThanMetricsAT", accountInfo.account_type_category, {
-                maxAge: 86000000,
-            })
-            .cookie("moreThanMetricsID", userID, {
-                maxAge: 86000000,
-            })
-            .send({ message: "Successfully logged in!", type: accountInfo.account_type_category, userID: userID, url: url })
+        res.status(200).send({
+                    message: "Successfully logged in!",
+                    type: accountInfo.account_type_category,
+                    userID: userID,
+                    url: url,
+                    cookieOneToSet: `moreThanMetricsAT=${accountInfo.account_type_category};max-age=86400;SameSite=None;Secure`,
+                    cookieTwoToSet: `moreThanMetricsID=${userID};max-age=86400;SameSite=None;Secure`,
+                })
     } else {
         res.status(400).send({ message: "Password is invalid!" })
     }
@@ -251,6 +251,6 @@ exports.loginUser = async function loginUser(req, res, moreThanMetricsDB) {
 }
 
 exports.logoutUser = async function logoutUser(res) {
-    const url = "http://localhost:3000"
-    res.status(200).clearCookie("moreThanMetricsAT").clearCookie("moreThanMetricsID").send({ message: "Successfully logged out!", url: url })
+    const url = "https://morethanmetrics.netlify.app"
+    res.status(200).send({ message: "Successfully logged out!", url: url })
 }
